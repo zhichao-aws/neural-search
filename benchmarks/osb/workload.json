@@ -1,0 +1,26 @@
+{% import "benchmark.helpers" as benchmark with context %}
+{
+    "version": 2,
+    "description": "Trec Covid Workload Testing",
+    "indices": [
+        {
+            "name": "{{ index_name }}",
+            "body": "{{ index_body }}"
+        }
+    ],
+    "corpora" : [
+        {
+            "name": "trec-covid-data",
+            "base-url": "{{index_corpus_base_url}}",
+            "documents": [
+                {
+                    "target-index": "{{ index_name }}",
+                    "source-file": "{{ corpus_file_path }}",
+                    "document-count": {{ corpus_size}}
+                }
+            ]
+        }
+    ],
+    "operations": {{ benchmark.collect(parts="operations/*.json") }},
+    "test_procedures": [{{ benchmark.collect(parts="procedures/*.json") }}]
+}

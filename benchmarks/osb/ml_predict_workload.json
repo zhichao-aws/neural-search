@@ -1,0 +1,7 @@
+{% import "benchmark.helpers" as benchmark with context %}
+{
+    "version": 2,
+    "description": "ML Predict with Trec Covid Query Workload Testing",
+    "operations": {{ benchmark.collect(parts="operations/*.json") }},
+    "test_procedures": [{{ benchmark.collect(parts="procedures/test-ml-commons-predict.json") }}]
+}

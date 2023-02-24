@@ -1,0 +1,16 @@
+{% import "benchmark.helpers" as benchmark with context %}
+{
+    "name": "ml-predict",
+    "default": false,
+    "schedule": [
+        {
+            "operation": {
+                "name": "ml-predict-api",
+                "operation-type": "ml-predict-api",
+                "param-source": "ml-predict-params-source",
+                "data_set_path": "{{ ml_predict_data_set_path }}",
+                "ml_model" : "{{ ml_model }}"
+            }
+        }
+    ]
+}

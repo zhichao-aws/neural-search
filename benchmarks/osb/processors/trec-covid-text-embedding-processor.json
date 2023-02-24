@@ -1,0 +1,13 @@
+{
+  "description": "text embedding pipeline for trec-covid",
+  "processors": [
+    {
+      "text_embedding": {
+        "model_id": "6NS2HIQBD_1r9ko4kBFy",
+        "field_map": {
+          "title_and_text": "title_and_text_knn"
+        }
+      }
+    }
+  ]
+}

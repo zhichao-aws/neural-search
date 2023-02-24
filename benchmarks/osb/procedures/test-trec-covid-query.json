@@ -1,0 +1,22 @@
+{% import "benchmark.helpers" as benchmark with context %}
+{
+    "name": "trec-covid-query",
+    "default": false,
+    "schedule": [
+        {
+            "operation": {
+                "name": "neural search",
+                "operation-type": "search",
+                "index": "{{ index_name }}",
+                "param-source": "neural-search-query-params-source",
+                "data_set_path": "{{ query_data_set_path }}",
+                "fields_to_excluded" : ["title_and_text", "title_and_text_knn"]
+            },
+            "clients": 1,
+            "target-throughput": 2,
+            "detailed-results": false,
+            "warmup-iterations": 1,
+            "iterations": 1
+        }
+    ]
+}

@@ -1,0 +1,29 @@
+{
+  "settings": {
+    "index": {
+      "knn": true,
+      "refresh_interval": "-1",
+      "default_pipeline" : "text-embedding-trec-covid"
+    },
+    "number_of_shards": "1",
+    "number_of_replicas": "0"
+  },
+  "mappings": {
+    "properties": {
+      "title_and_text_knn": {
+        "type": "knn_vector",
+        "dimension": 768,
+        "method": {
+          "name": "hnsw",
+          "engine": "lucene"
+        }
+      },
+      "title_and_text" : {
+        "type":  "text",
+        "index": false,
+        "norms": false,
+        "store": true
+      }
+    }
+  }
+}

@@ -1,0 +1,7 @@
+[
+  {
+    "name": "upload-sample-data-global",
+    "operation-type": "upload-sample-data",
+    "index": "{{ index_name }}"
+  }
+]

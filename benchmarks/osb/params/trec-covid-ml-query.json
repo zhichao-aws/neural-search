@@ -1,0 +1,4 @@
+{
+  "ml_predict_data_set_path" : "datasets/transformed/trec-covid/ml-commons-predict.json",
+  "ml_model": "<MODEL_ID>"
+}

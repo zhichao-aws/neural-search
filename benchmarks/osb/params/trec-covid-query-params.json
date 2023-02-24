@@ -1,0 +1,4 @@
+{
+  "index_name": "trec_covid_index",
+  "query_data_set_path" : "datasets/transformed/trec-covid/updated.json"
+}
