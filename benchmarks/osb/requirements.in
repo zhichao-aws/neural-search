@@ -1,2 +1,4 @@
 opensearch-py
 opensearch-benchmark
+requests
+h5py
