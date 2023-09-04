@@ -82,6 +82,7 @@ public class NeuralSearch extends Plugin
         final IndexNameExpressionResolver indexNameExpressionResolver,
         final Supplier<RepositoriesService> repositoriesServiceSupplier
     ) {
+        System.out.println(123456789);
         NeuralQueryBuilder.initialize(clientTEAccessor);
         NeuralSparseQueryBuilder.initialize(clientNSAccessor);
         return List.of(clientTEAccessor, clientNSAccessor);

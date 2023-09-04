@@ -19,9 +19,26 @@ import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.lucene.document.FeatureField;
+import org.apache.lucene.index.ImpactsEnum;
+import org.apache.lucene.index.LeafReaderContext;
+import org.apache.lucene.index.PostingsEnum;
+import org.apache.lucene.index.Term;
+import org.apache.lucene.index.Terms;
+import org.apache.lucene.index.TermsEnum;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
+import org.apache.lucene.search.BoostQuery;
+import org.apache.lucene.search.DocIdSetIterator;
+import org.apache.lucene.search.Explanation;
+import org.apache.lucene.search.ImpactsDISI;
+import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
+import org.apache.lucene.search.ScoreMode;
+import org.apache.lucene.search.Scorer;
+import org.apache.lucene.search.TermQuery;
+import org.apache.lucene.search.Weight;
+import org.apache.lucene.search.similarities.Similarity;
+import org.apache.lucene.util.BytesRef;
 import org.opensearch.core.ParseField;
 import org.opensearch.core.common.ParsingException;
 import org.opensearch.core.common.io.stream.StreamInput;
@@ -115,7 +132,6 @@ public class SparseQueryBuilder extends AbstractQueryBuilder<SparseQueryBuilder>
                 }
             } else if (TERM_WEIGHT_FIELD.match(currentFieldName, parser.getDeprecationHandler())) {
                 sparseQueryBuilder.termWeight(parser.map(HashMap::new, XContentParser::floatValue));
-//                sparseQueryBuilder.termWeight(castToTermWeight(parser.map()));
             } else {
                 throw new ParsingException(
                         parser.getTokenLocation(),
@@ -127,14 +143,18 @@ public class SparseQueryBuilder extends AbstractQueryBuilder<SparseQueryBuilder>
 
     @Override
     protected Query doToQuery(QueryShardContext context) throws IOException {
+        // System.out.println("1");
         BooleanQuery.Builder builder = new BooleanQuery.Builder();
         for (Map.Entry<String, Float> entry: termWeight.entrySet()) {
-                builder.add(FeatureField.newLinearQuery(
-                        fieldName,
-                        entry.getKey(),
-                        entry.getValue()),
-                        BooleanClause.Occur.SHOULD
-                );
+//           builder.add(FeatureField.newLinearQuery(
+//                   fieldName,
+//                   entry.getKey(),
+//                   entry.getValue()),
+//                   BooleanClause.Occur.SHOULD
+//           );
+            builder.add(new BoostQuery(new FeatureQuery(fieldName, entry.getKey()), entry.getValue()), BooleanClause.Occur.SHOULD);
+        //    builder.add(new BoostQuery(new TermQuery(new Term(fieldName, entry.getKey())), entry.getValue()), BooleanClause.Occur.SHOULD);
+        //    builder.add(new TermQuery(new Term(fieldName, entry.getKey())), BooleanClause.Occur.SHOULD);
         }
         return builder.build();
     }
