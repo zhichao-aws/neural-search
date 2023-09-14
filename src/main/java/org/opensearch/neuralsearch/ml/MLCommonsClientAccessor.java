@@ -106,17 +106,17 @@ public class MLCommonsClientAccessor {
     }
 
     public void inferenceSentencesWithMapResult(
-            @NonNull final String modelId,
-            @NonNull final List<String> inputText,
-            @NonNull final ActionListener<List<Map<String, ?>>> listener) {
+        @NonNull final String modelId,
+        @NonNull final List<String> inputText,
+        @NonNull final ActionListener<List<Map<String, ?>>> listener) {
         retryableInferenceSentencesWithMapResult(modelId, inputText, 0, listener);
     }
 
     private void retryableInferenceSentencesWithMapResult(
-            final String modelId,
-            final List<String> inputText,
-            final int retryTime,
-            final ActionListener<List<Map<String, ?>>> listener
+        final String modelId,
+        final List<String> inputText,
+        final int retryTime,
+        final ActionListener<List<Map<String, ?>>> listener
     ) {
         MLInput mlInput = createMLInput(null, inputText);
         mlClient.predict(modelId, mlInput, ActionListener.wrap(mlOutput -> {
