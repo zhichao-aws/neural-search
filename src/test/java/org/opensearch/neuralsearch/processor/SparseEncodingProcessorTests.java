@@ -134,6 +134,28 @@ public class SparseEncodingProcessorTests extends OpenSearchTestCase {
         verify(handler).accept(isNull(), any(IllegalArgumentException.class));
     }
 
+    public void testExecute_withMapTypeInput_successful() {
+        Map<String, String> map1 = ImmutableMap.of("test1", "test2");
+        Map<String, String> map2 = ImmutableMap.of("test4", "test5");
+        Map<String, Object> sourceAndMetadata = new HashMap<>();
+        sourceAndMetadata.put("key1", map1);
+        sourceAndMetadata.put("key2", map2);
+        IngestDocument ingestDocument = new IngestDocument(sourceAndMetadata, new HashMap<>());
+        SparseEncodingProcessorFactory processor = createInstance();
+
+        List<List<Float>> modelTensorList = createMockVectorResult();
+        doAnswer(invocation -> {
+            ActionListener<List<List<Float>>> listener = invocation.getArgument(2);
+            listener.onResponse(modelTensorList);
+            return null;
+        }).when(mlCommonsClientAccessor).inferenceSentences(anyString(), anyList(), isA(ActionListener.class));
+
+        BiConsumer handler = mock(BiConsumer.class);
+        processor.execute(ingestDocument, handler);
+        verify(handler).accept(any(IngestDocument.class), isNull());
+
+    }
+
 
     private List<Map<String, ?> > createMockMapResult()
     {
