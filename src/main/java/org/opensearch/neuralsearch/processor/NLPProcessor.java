@@ -54,10 +54,10 @@ public abstract class NLPProcessor extends AbstractProcessor {
             Environment environment
     ) {
         super(tag, description);
+        this.type = type;
         if (StringUtils.isBlank(modelId)) throw new IllegalArgumentException("model_id is null or empty, can not process it");
         validateEmbeddingConfiguration(fieldMap);
 
-        this.type = type;
         this.listTypeNestedMapKey = listTypeNestedMapKey;
         this.modelId = modelId;
         this.fieldMap = fieldMap;
@@ -78,7 +78,7 @@ public abstract class NLPProcessor extends AbstractProcessor {
     }
 
     @SuppressWarnings({ "rawtypes" })
-    protected static void validateListTypeValue(String sourceKey, Object sourceValue) {
+    private static void validateListTypeValue(String sourceKey, Object sourceValue) {
         for (Object value : (List) sourceValue) {
             if (value == null) {
                 throw new IllegalArgumentException("list type field [" + sourceKey + "] has null, can not process it");
@@ -91,7 +91,7 @@ public abstract class NLPProcessor extends AbstractProcessor {
     }
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
-    protected void validateNestedTypeValue(String sourceKey, Object sourceValue, Supplier<Integer> maxDepthSupplier) {
+    private void validateNestedTypeValue(String sourceKey, Object sourceValue, Supplier<Integer> maxDepthSupplier) {
         int maxDepth = maxDepthSupplier.get();
         if (maxDepth > MapperService.INDEX_MAPPING_DEPTH_LIMIT_SETTING.get(environment.settings())) {
             throw new IllegalArgumentException("map type field [" + sourceKey + "] reached max depth limit, can not process it");
