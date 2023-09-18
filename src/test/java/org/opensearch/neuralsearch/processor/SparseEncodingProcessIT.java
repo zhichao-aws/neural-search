@@ -15,7 +15,6 @@ import org.junit.Before;
 import org.opensearch.client.Response;
 import org.opensearch.common.xcontent.XContentHelper;
 import org.opensearch.common.xcontent.XContentType;
-import org.opensearch.ingest.Processor;
 import org.opensearch.neuralsearch.common.BaseNeuralSearchIT;
 
 import java.nio.file.Files;
