@@ -68,7 +68,7 @@ public class SparseEncodingProcessIT extends BaseNeuralSearchIT {
 
     private void ingestDocument() throws Exception {
         String ingestDocument = "{\n"
-                + "  \"passage_text\": \"This is a good day\"
+                + "\"passage_text\": \"This is a good day\""
                 + "}\n";
         Response response = makeRequest(
                 client(),

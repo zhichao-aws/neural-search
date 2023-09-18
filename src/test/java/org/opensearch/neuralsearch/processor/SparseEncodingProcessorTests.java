@@ -24,6 +24,7 @@ import org.opensearch.test.OpenSearchTestCase;
 
 import java.util.*;
 import java.util.function.BiConsumer;
+import java.util.stream.IntStream;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -64,7 +65,7 @@ public class SparseEncodingProcessorTests extends OpenSearchTestCase {
         IngestDocument ingestDocument = new IngestDocument(sourceAndMetadata, new HashMap<>());
         SparseEncodingProcessor processor = createInstance();
 
-        List<Map<String, ?> > dataAsMapList = createMockMapResult();
+        List<Map<String, ?> > dataAsMapList = createMockMapResult(2);
         doAnswer(invocation -> {
             ActionListener<List<Map<String, ?>>> listener = invocation.getArgument(2);
             listener.onResponse(dataAsMapList);
@@ -103,12 +104,12 @@ public class SparseEncodingProcessorTests extends OpenSearchTestCase {
         IngestDocument ingestDocument = new IngestDocument(sourceAndMetadata, new HashMap<>());
         SparseEncodingProcessor processor = createInstance();
 
-        List<Map<String, ?> > dataAsMapList = createMockMapResult();
+        List<Map<String, ?> > dataAsMapList = createMockMapResult(6);
         doAnswer(invocation -> {
             ActionListener<List<Map<String, ?>>> listener = invocation.getArgument(2);
             listener.onResponse(dataAsMapList);
             return null;
-        }).when(mlCommonsClientAccessor).inferenceSentences(anyString(), anyList(), isA(ActionListener.class));
+        }).when(mlCommonsClientAccessor).inferenceSentencesWithMapResult(anyString(), anyList(), isA(ActionListener.class));
 
         BiConsumer handler = mock(BiConsumer.class);
         processor.execute(ingestDocument, handler);
@@ -141,14 +142,14 @@ public class SparseEncodingProcessorTests extends OpenSearchTestCase {
         sourceAndMetadata.put("key1", map1);
         sourceAndMetadata.put("key2", map2);
         IngestDocument ingestDocument = new IngestDocument(sourceAndMetadata, new HashMap<>());
-        SparseEncodingProcessorFactory processor = createInstance();
+        SparseEncodingProcessor processor = createInstance();
 
-        List<List<Float>> modelTensorList = createMockVectorResult();
+        List<Map<String, ?> > dataAsMapList = createMockMapResult(2);
         doAnswer(invocation -> {
-            ActionListener<List<List<Float>>> listener = invocation.getArgument(2);
-            listener.onResponse(modelTensorList);
+            ActionListener<List<Map<String, ?>>> listener = invocation.getArgument(2);
+            listener.onResponse(dataAsMapList);
             return null;
-        }).when(mlCommonsClientAccessor).inferenceSentences(anyString(), anyList(), isA(ActionListener.class));
+        }).when(mlCommonsClientAccessor).inferenceSentencesWithMapResult(anyString(), anyList(), isA(ActionListener.class));
 
         BiConsumer handler = mock(BiConsumer.class);
         processor.execute(ingestDocument, handler);
@@ -157,11 +158,12 @@ public class SparseEncodingProcessorTests extends OpenSearchTestCase {
     }
 
 
-    private List<Map<String, ?> > createMockMapResult()
+    private List<Map<String, ?> > createMockMapResult(int number)
     {
         List<Map<String, Float>> mockSparseEncodingResult = new ArrayList<>();
-        mockSparseEncodingResult.add(Map.of("hello", 1.0f));
-        mockSparseEncodingResult.add(Map.of("world", 1.0f));
+        IntStream.range(0, number)
+                .forEachOrdered(x -> mockSparseEncodingResult.add(ImmutableMap.of("hello", 1.0f)));
+
         List<Map<String, ?>> mockMapResult = Collections.singletonList(Map.of("response", mockSparseEncodingResult));
         return mockMapResult;
     }
