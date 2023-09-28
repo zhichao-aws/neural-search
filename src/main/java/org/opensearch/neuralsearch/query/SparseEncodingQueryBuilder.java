@@ -45,7 +45,7 @@ import org.opensearch.neuralsearch.util.TokenWeightUtil;
 import com.google.common.annotations.VisibleForTesting;
 
 /**
- * SparseEncodingQueryBuilder is responsible for handling "neural_sparse" query types. It uses an ML neural_sparse model
+ * SparseEncodingQueryBuilder is responsible for handling "neural_sparse" query types. It uses an ML NEURAL_SPARSE model
  * or SPARSE_TOKENIZE model to produce a Map with String keys and Float values for input text. Then it will be transformed
  * to Lucene FeatureQuery wrapped by Lucene BooleanQuery.
  */
