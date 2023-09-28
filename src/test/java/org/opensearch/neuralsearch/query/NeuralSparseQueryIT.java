@@ -21,7 +21,7 @@ import org.opensearch.index.query.MatchQueryBuilder;
 import org.opensearch.neuralsearch.TestUtils;
 import org.opensearch.neuralsearch.common.BaseSparseEncodingIT;
 
-public class SparseEncodingQueryIT extends BaseSparseEncodingIT {
+public class NeuralSparseQueryIT extends BaseSparseEncodingIT {
     private static final String TEST_BASIC_INDEX_NAME = "test-sparse-basic-index";
     private static final String TEST_MULTI_NEURAL_SPARSE_FIELD_INDEX_NAME = "test-sparse-multi-field-index";
     private static final String TEST_TEXT_AND_NEURAL_SPARSE_FIELD_INDEX_NAME = "test-sparse-text-and-field-index";
@@ -68,7 +68,7 @@ public class SparseEncodingQueryIT extends BaseSparseEncodingIT {
     public void testBasicQueryUsingQueryText() {
         initializeIndexIfNotExist(TEST_BASIC_INDEX_NAME);
         String modelId = getDeployedModelId();
-        SparseEncodingQueryBuilder sparseEncodingQueryBuilder = new SparseEncodingQueryBuilder().fieldName(TEST_NEURAL_SPARSE_FIELD_NAME_1
+        NeuralSparseQueryBuilder sparseEncodingQueryBuilder = new NeuralSparseQueryBuilder().fieldName(TEST_NEURAL_SPARSE_FIELD_NAME_1
         ).queryText(TEST_QUERY_TEXT).modelId(modelId);
         Map<String, Object> searchResponseAsMap = search(TEST_BASIC_INDEX_NAME, sparseEncodingQueryBuilder, 1);
         Map<String, Object> firstInnerHit = getFirstInnerHit(searchResponseAsMap);
@@ -97,7 +97,7 @@ public class SparseEncodingQueryIT extends BaseSparseEncodingIT {
         float maxTokenScore = 0.00001f;
         initializeIndexIfNotExist(TEST_BASIC_INDEX_NAME);
         String modelId = getDeployedModelId();
-        SparseEncodingQueryBuilder sparseEncodingQueryBuilder = new SparseEncodingQueryBuilder().fieldName(TEST_NEURAL_SPARSE_FIELD_NAME_1
+        NeuralSparseQueryBuilder sparseEncodingQueryBuilder = new NeuralSparseQueryBuilder().fieldName(TEST_NEURAL_SPARSE_FIELD_NAME_1
         ).queryText(TEST_QUERY_TEXT).modelId(modelId).maxTokenScore(maxTokenScore);
         Map<String, Object> searchResponseAsMap = search(TEST_BASIC_INDEX_NAME, sparseEncodingQueryBuilder, 1);
         Map<String, Object> firstInnerHit = getFirstInnerHit(searchResponseAsMap);
@@ -134,7 +134,7 @@ public class SparseEncodingQueryIT extends BaseSparseEncodingIT {
     public void testBoostQuery() {
         initializeIndexIfNotExist(TEST_BASIC_INDEX_NAME);
         String modelId = getDeployedModelId();
-        SparseEncodingQueryBuilder sparseEncodingQueryBuilder = new SparseEncodingQueryBuilder().fieldName(TEST_NEURAL_SPARSE_FIELD_NAME_1
+        NeuralSparseQueryBuilder sparseEncodingQueryBuilder = new NeuralSparseQueryBuilder().fieldName(TEST_NEURAL_SPARSE_FIELD_NAME_1
         ).queryText(TEST_QUERY_TEXT).modelId(modelId).boost(2.0f);
         Map<String, Object> searchResponseAsMap = search(TEST_BASIC_INDEX_NAME, sparseEncodingQueryBuilder, 1);
         Map<String, Object> firstInnerHit = getFirstInnerHit(searchResponseAsMap);
@@ -169,7 +169,7 @@ public class SparseEncodingQueryIT extends BaseSparseEncodingIT {
         initializeIndexIfNotExist(TEST_BASIC_INDEX_NAME);
         String modelId = getDeployedModelId();
         MatchAllQueryBuilder matchAllQueryBuilder = new MatchAllQueryBuilder();
-        SparseEncodingQueryBuilder sparseEncodingQueryBuilder = new SparseEncodingQueryBuilder().fieldName(TEST_NEURAL_SPARSE_FIELD_NAME_1
+        NeuralSparseQueryBuilder sparseEncodingQueryBuilder = new NeuralSparseQueryBuilder().fieldName(TEST_NEURAL_SPARSE_FIELD_NAME_1
         ).queryText(TEST_QUERY_TEXT).modelId(modelId);
         Map<String, Object> searchResponseAsMap = search(TEST_BASIC_INDEX_NAME, matchAllQueryBuilder, sparseEncodingQueryBuilder, 1);
         Map<String, Object> firstInnerHit = getFirstInnerHit(searchResponseAsMap);
@@ -208,9 +208,9 @@ public class SparseEncodingQueryIT extends BaseSparseEncodingIT {
         String modelId = getDeployedModelId();
         BoolQueryBuilder boolQueryBuilder = new BoolQueryBuilder();
 
-        SparseEncodingQueryBuilder sparseEncodingQueryBuilder1 = new SparseEncodingQueryBuilder().fieldName(TEST_NEURAL_SPARSE_FIELD_NAME_1
+        NeuralSparseQueryBuilder sparseEncodingQueryBuilder1 = new NeuralSparseQueryBuilder().fieldName(TEST_NEURAL_SPARSE_FIELD_NAME_1
         ).queryText(TEST_QUERY_TEXT).modelId(modelId);
-        SparseEncodingQueryBuilder sparseEncodingQueryBuilder2 = new SparseEncodingQueryBuilder().fieldName(TEST_NEURAL_SPARSE_FIELD_NAME_2
+        NeuralSparseQueryBuilder sparseEncodingQueryBuilder2 = new NeuralSparseQueryBuilder().fieldName(TEST_NEURAL_SPARSE_FIELD_NAME_2
         ).queryText(TEST_QUERY_TEXT).modelId(modelId);
 
         boolQueryBuilder.should(sparseEncodingQueryBuilder1).should(sparseEncodingQueryBuilder2);
@@ -252,7 +252,7 @@ public class SparseEncodingQueryIT extends BaseSparseEncodingIT {
         String modelId = getDeployedModelId();
         BoolQueryBuilder boolQueryBuilder = new BoolQueryBuilder();
 
-        SparseEncodingQueryBuilder sparseEncodingQueryBuilder = new SparseEncodingQueryBuilder().fieldName(TEST_NEURAL_SPARSE_FIELD_NAME_1
+        NeuralSparseQueryBuilder sparseEncodingQueryBuilder = new NeuralSparseQueryBuilder().fieldName(TEST_NEURAL_SPARSE_FIELD_NAME_1
         ).queryText(TEST_QUERY_TEXT).modelId(modelId);
         MatchQueryBuilder matchQueryBuilder = new MatchQueryBuilder(TEST_TEXT_FIELD_NAME_1, TEST_QUERY_TEXT);
         boolQueryBuilder.should(sparseEncodingQueryBuilder).should(matchQueryBuilder);
@@ -270,7 +270,7 @@ public class SparseEncodingQueryIT extends BaseSparseEncodingIT {
         initializeIndexIfNotExist(TEST_TEXT_AND_NEURAL_SPARSE_FIELD_INDEX_NAME);
         String modelId = getDeployedModelId();
 
-        SparseEncodingQueryBuilder sparseEncodingQueryBuilder = new SparseEncodingQueryBuilder().fieldName(TEST_TEXT_FIELD_NAME_1)
+        NeuralSparseQueryBuilder sparseEncodingQueryBuilder = new NeuralSparseQueryBuilder().fieldName(TEST_TEXT_FIELD_NAME_1)
             .queryText(TEST_QUERY_TEXT)
             .modelId(modelId);
 

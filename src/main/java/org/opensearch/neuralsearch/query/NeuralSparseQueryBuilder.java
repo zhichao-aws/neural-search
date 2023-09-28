@@ -56,7 +56,7 @@ import com.google.common.annotations.VisibleForTesting;
 @Accessors(chain = true, fluent = true)
 @NoArgsConstructor
 @AllArgsConstructor
-public class SparseEncodingQueryBuilder extends AbstractQueryBuilder<SparseEncodingQueryBuilder> {
+public class NeuralSparseQueryBuilder extends AbstractQueryBuilder<NeuralSparseQueryBuilder> {
     public static final String NAME = "neural_sparse";
     @VisibleForTesting
     static final ParseField QUERY_TEXT_FIELD = new ParseField("query_text");
@@ -68,7 +68,7 @@ public class SparseEncodingQueryBuilder extends AbstractQueryBuilder<SparseEncod
     private static MLCommonsClientAccessor ML_CLIENT;
 
     public static void initialize(MLCommonsClientAccessor mlClient) {
-        SparseEncodingQueryBuilder.ML_CLIENT = mlClient;
+        NeuralSparseQueryBuilder.ML_CLIENT = mlClient;
     }
 
     private String fieldName;
@@ -83,7 +83,7 @@ public class SparseEncodingQueryBuilder extends AbstractQueryBuilder<SparseEncod
      * @param in StreamInput to initialize object from
      * @throws IOException thrown if unable to read from input stream
      */
-    public SparseEncodingQueryBuilder(StreamInput in) throws IOException {
+    public NeuralSparseQueryBuilder(StreamInput in) throws IOException {
         super(in);
         this.fieldName = in.readString();
         this.queryText = in.readString();
@@ -123,8 +123,8 @@ public class SparseEncodingQueryBuilder extends AbstractQueryBuilder<SparseEncod
      * @return NeuralQueryBuilder
      * @throws IOException can be thrown by parser
      */
-    public static SparseEncodingQueryBuilder fromXContent(XContentParser parser) throws IOException {
-        SparseEncodingQueryBuilder sparseEncodingQueryBuilder = new SparseEncodingQueryBuilder();
+    public static NeuralSparseQueryBuilder fromXContent(XContentParser parser) throws IOException {
+        NeuralSparseQueryBuilder sparseEncodingQueryBuilder = new NeuralSparseQueryBuilder();
         if (parser.currentToken() != XContentParser.Token.START_OBJECT) {
             throw new ParsingException(parser.getTokenLocation(), "First token of " + NAME + "query must be START_OBJECT");
         }
@@ -161,7 +161,7 @@ public class SparseEncodingQueryBuilder extends AbstractQueryBuilder<SparseEncod
         return sparseEncodingQueryBuilder;
     }
 
-    private static void parseQueryParams(XContentParser parser, SparseEncodingQueryBuilder sparseEncodingQueryBuilder) throws IOException {
+    private static void parseQueryParams(XContentParser parser, NeuralSparseQueryBuilder sparseEncodingQueryBuilder) throws IOException {
         XContentParser.Token token;
         String currentFieldName = "";
         while ((token = parser.nextToken()) != XContentParser.Token.END_OBJECT) {
@@ -213,7 +213,7 @@ public class SparseEncodingQueryBuilder extends AbstractQueryBuilder<SparseEncod
                 }, actionListener::onFailure)
             ))
         );
-        return new SparseEncodingQueryBuilder().fieldName(fieldName)
+        return new NeuralSparseQueryBuilder().fieldName(fieldName)
             .queryText(queryText)
             .modelId(modelId)
             .maxTokenScore(maxTokenScore)
@@ -273,7 +273,7 @@ public class SparseEncodingQueryBuilder extends AbstractQueryBuilder<SparseEncod
     }
 
     @Override
-    protected boolean doEquals(SparseEncodingQueryBuilder obj) {
+    protected boolean doEquals(NeuralSparseQueryBuilder obj) {
         if (this == obj) return true;
         if (obj == null || getClass() != obj.getClass()) return false;
         EqualsBuilder equalsBuilder = new EqualsBuilder().append(fieldName, obj.fieldName)

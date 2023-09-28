@@ -10,7 +10,7 @@
       "favor_list_sparse": {
         "type": "nested",
         "properties":{
-          "neural_sparse":{
+          "sparse_encoding":{
             "type": "rank_features"
           }
         }
