@@ -1,4 +1,9 @@
 /*
+ * Copyright OpenSearch Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
  * SPDX-License-Identifier: Apache-2.0
  *
  * The OpenSearch Contributors require contributions made to
@@ -7,33 +12,11 @@
  */
 
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-/*
- * Modifications Copyright OpenSearch Contributors. See
- * GitHub history for details.
- */
-
-/*
  * This class is built based on lucene FeatureQuery. We use LinearFuntion to
  * build the query and add an upperbound to it.
  */
 
-package org.opensearch.neuralsearch.query;
+package org.apache.lucene;
 
 import java.io.IOException;
 import java.util.Objects;
@@ -66,6 +49,10 @@ import org.apache.lucene.util.BytesRef;
  * To mitigate this issue, we rewrite the FeatureQuery to BoundedLinearFeatureQuery. The caller can
  * set the token score upperbound of this query. And according to our use case, we use LinearFunction
  * as the score function.
+ *
+ * This class combines both <a href="https://github.com/apache/lucene/blob/main/lucene/core/src/java/org/apache/lucene/document/FeatureQuery.java">FeatureQuery</a>
+ * and <a href="https://github.com/apache/lucene/blob/main/lucene/core/src/java/org/apache/lucene/document/FeatureField.java">FeatureField</a> together
+ * and will be deprecated after OpenSearch upgraded lucene to version 9.8.
  */
 
 public final class BoundedLinearFeatureQuery extends Query {
@@ -219,6 +206,7 @@ public final class BoundedLinearFeatureQuery extends Query {
     // the field and decodeFeatureValue are modified from FeatureField.decodeFeatureValue
     static final int MAX_FREQ = Float.floatToIntBits(Float.MAX_VALUE) >>> 15;
 
+    // Rewriting this function to make scoreUpperBound work.
     private float decodeFeatureValue(float freq) {
         if (freq > MAX_FREQ) {
             return scoreUpperBound;

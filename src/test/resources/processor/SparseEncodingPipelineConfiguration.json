@@ -2,7 +2,7 @@
   "description": "An example sparse Encoding pipeline",
   "processors" : [
     {
-      "sparse_encoding": {
+      "neural_sparse": {
         "model_id": "%s",
         "field_map": {
           "title": "title_sparse",

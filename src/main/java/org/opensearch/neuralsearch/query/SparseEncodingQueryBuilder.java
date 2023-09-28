@@ -21,6 +21,7 @@ import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
+import org.apache.lucene.BoundedLinearFeatureQuery;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.BoostQuery;
@@ -44,7 +45,7 @@ import org.opensearch.neuralsearch.util.TokenWeightUtil;
 import com.google.common.annotations.VisibleForTesting;
 
 /**
- * SparseEncodingQueryBuilder is responsible for handling "sparse_encoding" query types. It uses an ML SPARSE_ENCODING model
+ * SparseEncodingQueryBuilder is responsible for handling "neural_sparse" query types. It uses an ML neural_sparse model
  * or SPARSE_TOKENIZE model to produce a Map with String keys and Float values for input text. Then it will be transformed
  * to Lucene FeatureQuery wrapped by Lucene BooleanQuery.
  */
@@ -56,7 +57,7 @@ import com.google.common.annotations.VisibleForTesting;
 @NoArgsConstructor
 @AllArgsConstructor
 public class SparseEncodingQueryBuilder extends AbstractQueryBuilder<SparseEncodingQueryBuilder> {
-    public static final String NAME = "sparse_encoding";
+    public static final String NAME = "neural_sparse";
     @VisibleForTesting
     static final ParseField QUERY_TEXT_FIELD = new ParseField("query_text");
     @VisibleForTesting
@@ -104,7 +105,7 @@ public class SparseEncodingQueryBuilder extends AbstractQueryBuilder<SparseEncod
         xContentBuilder.startObject(fieldName);
         xContentBuilder.field(QUERY_TEXT_FIELD.getPreferredName(), queryText);
         xContentBuilder.field(MODEL_ID_FIELD.getPreferredName(), modelId);
-        if (null != maxTokenScore) xContentBuilder.field(MAX_TOKEN_SCORE_FIELD.getPreferredName(), maxTokenScore);
+        if (maxTokenScore != null) xContentBuilder.field(MAX_TOKEN_SCORE_FIELD.getPreferredName(), maxTokenScore);
         printBoostAndQueryName(xContentBuilder);
         xContentBuilder.endObject();
         xContentBuilder.endObject();
@@ -153,7 +154,7 @@ public class SparseEncodingQueryBuilder extends AbstractQueryBuilder<SparseEncod
             sparseEncodingQueryBuilder.modelId(),
             String.format(Locale.ROOT, "%s field must be provided for [%s] query", MODEL_ID_FIELD.getPreferredName(), NAME)
         );
-        if (null != sparseEncodingQueryBuilder.maxTokenScore && sparseEncodingQueryBuilder.maxTokenScore <= 0) {
+        if (sparseEncodingQueryBuilder.maxTokenScore != null && sparseEncodingQueryBuilder.maxTokenScore <= 0) {
             throw new IllegalArgumentException(MAX_TOKEN_SCORE_FIELD.getPreferredName() + " must be larger than 0.");
         }
 
@@ -227,7 +228,7 @@ public class SparseEncodingQueryBuilder extends AbstractQueryBuilder<SparseEncod
         Map<String, Float> queryTokens = queryTokensSupplier.get();
         validateQueryTokens(queryTokens);
 
-        final Float scoreUpperBound = null != maxTokenScore ? maxTokenScore : Float.MAX_VALUE;
+        final Float scoreUpperBound = maxTokenScore != null ? maxTokenScore : Float.MAX_VALUE;
 
         BooleanQuery.Builder builder = new BooleanQuery.Builder();
         for (Map.Entry<String, Float> entry : queryTokens.entrySet()) {
