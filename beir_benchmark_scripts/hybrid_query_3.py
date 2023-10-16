@@ -83,9 +83,9 @@ base_query_body = {
           }
     }
 
-config["result_index_name"]="hybrid_"+config["result_index_name"]
+config["result_index_name"]="hybrid3_"+config["result_index_name"]
 
-response = client.transport.perform_request('PUT','/_search/pipeline/norm-pipeline',body={
+response = client.transport.perform_request('PUT','/_search/pipeline/norm-pipeline3',body={
   "description": "Post-processor for hybrid search",
   "phase_results_processors": [
     {
@@ -94,7 +94,14 @@ response = client.transport.perform_request('PUT','/_search/pipeline/norm-pipeli
           "technique": "min_max"
         },
         "combination": {
-          "technique": "arithmetic_mean"
+          "technique": "arithmetic_mean",
+          "parameters": {
+            "weights": [
+              0.5,
+              0.25,
+              0.25
+            ]
+          }
         }
       }
     }
@@ -127,7 +134,7 @@ for dataset in all_datasets:
         base_query_body["query"]["hybrid"]["queries"][1]["match"]["title"]["query"] = text
         base_query_body["query"]["hybrid"]["queries"][2]["match"]["body"]["query"] = text
         try:
-            response=client.search(index=index_name,body=base_query_body,params={"search_pipeline": "norm-pipeline"})
+            response=client.search(index=index_name,body=base_query_body,params={"search_pipeline": "norm-pipeline3"})
         except Exception as e:
             print(e)
             response=client.search(index=index_name,body=base_query_body_orgin)

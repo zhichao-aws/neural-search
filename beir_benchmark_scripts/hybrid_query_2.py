@@ -41,7 +41,7 @@ with open(args.config_file, "r") as file:
 all_files = os.listdir(config["bulk_string_dir"])
 all_datasets = [file.split(".")[0] for file in all_files]
 
-base_query_body_orgin = {
+base_query_body_origin = {
         "_source":False,
         "size":20,
         "query":{
@@ -54,8 +54,8 @@ base_query_body_orgin = {
         }
     }
 if "max_token_score" in config:
-    base_query_body_orgin["query"]["neural_sparse"]["text_sparse"]["max_token_score"] = config["max_token_score"]
-print(base_query_body_orgin)
+    base_query_body_origin["query"]["neural_sparse"]["text_sparse"]["max_token_score"] = config["max_token_score"]
+print(base_query_body_origin)
 
 base_query_body = {
         "_source":False,
@@ -63,27 +63,21 @@ base_query_body = {
          'query': {
                "hybrid": {
                      "queries": [
-                                base_query_body_orgin["query"],
-                                {
-                                    'match': {
-                                        'title': {
-                                            'query': ""
-                                        }
-                                    }
-                                },
-                                {
-                                    'match': {
-                                        'body': {
-                                            'query': ""
-                                        }
-                                    }
+                            base_query_body_origin["query"],
+                            {
+                                'multi_match': {
+                                    'query': "",
+                                    'type': 'best_fields',
+                                    'fields': ['body', 'title'],
+                                    "tie_breaker": 0.5
                                 }
+                            }
                        ]
                  }
           }
     }
 
-config["result_index_name"]="hybrid_"+config["result_index_name"]
+config["result_index_name"]="hybrid2_"+config["result_index_name"]
 
 response = client.transport.perform_request('PUT','/_search/pipeline/norm-pipeline',body={
   "description": "Post-processor for hybrid search",
@@ -102,7 +96,7 @@ response = client.transport.perform_request('PUT','/_search/pipeline/norm-pipeli
 })
 assert response["acknowledged"]==True
 
-deploy_model(client, config["model_id"])
+# deploy_model(client, config["model_id"])
 for dataset in all_datasets:
     try:
         client.get(index=config["result_index_name"],id=dataset)
@@ -124,13 +118,8 @@ for dataset in all_datasets:
     print("start query of index ",index_name)
     for _id,text in tqdm(queries.items()):
         base_query_body["query"]["hybrid"]["queries"][0]["neural_sparse"]["text_sparse"]["query_text"] = text
-        base_query_body["query"]["hybrid"]["queries"][1]["match"]["title"]["query"] = text
-        base_query_body["query"]["hybrid"]["queries"][2]["match"]["body"]["query"] = text
-        try:
-            response=client.search(index=index_name,body=base_query_body,params={"search_pipeline": "norm-pipeline"})
-        except Exception as e:
-            print(e)
-            response=client.search(index=index_name,body=base_query_body_orgin)
+        base_query_body["query"]["hybrid"]["queries"][1]["multi_match"]["query"] = text
+        response=client.search(index=index_name,body=base_query_body,params={"search_pipeline": "norm-pipeline"})
         hits=response["hits"]["hits"]
         run_res[_id]={item["_id"]:item["_score"] for item in hits}
         times.append(response["took"])
