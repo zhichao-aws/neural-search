@@ -1,0 +1,10 @@
+endpoint: localhost
+port: 9200
+index_prefix: gpu-bi-encoder-
+queries_dir: /home/ubuntu/benchmark/queries
+qrels_dir: /home/ubuntu/benchmark/qrels
+bulk_string_dir: /home/ubuntu/benchmark/bulk_string/bi-encoder
+bulk_size: 500
+model_id: VMHgMosBkY7TeculzE7t
+result_index_name: gpu-bi-encoder
+max_token_score: 3.5

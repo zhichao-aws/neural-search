@@ -1,0 +1,10 @@
+endpoint: localhost
+port: 9200
+index_prefix: gpu-doc-
+queries_dir: /home/ubuntu/benchmark/queries
+qrels_dir: /home/ubuntu/benchmark/qrels
+bulk_string_dir: /home/ubuntu/benchmark/bulk_string/doc-model
+bulk_size: 500
+model_id: Ny0AI4sBJAvAOCMLZxun
+result_index_name: gpu-doc
+max_token_score: 2

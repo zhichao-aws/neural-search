@@ -1,0 +1,9 @@
+endpoint: localhost
+port: 9200
+index_prefix: gpu-tasb-
+queries_dir: /home/ubuntu/benchmark/queries
+qrels_dir: /home/ubuntu/benchmark/qrels
+bulk_string_dir: /home/ubuntu/benchmark/bulk_string/tasb
+bulk_size: 500
+model_id: ChO4NosByXSCrqYTRPEI
+result_index_name: gpu-tasb
