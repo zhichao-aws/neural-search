@@ -41,7 +41,7 @@ with open(args.config_file, "r") as file:
 all_files = os.listdir(config["bulk_string_dir"])
 all_datasets = [file.split(".")[0] for file in all_files]
 
-base_query_body = {
+base_query_body_origin = {
         "_source":False,
         "query":{
             "neural":{
@@ -60,15 +60,7 @@ base_query_body = {
          'query': {
                "hybrid": {
                      "queries": [
-                                {
-                                    'neural': {
-                                        'text_sparse': {
-                                            'query_text': "",
-                                            'model_id': config["model_id"],
-                                            'k': 100
-                                        }
-                                    }
-                                },
+                                base_query_body_origin["query"],
                                 {
                                     'match': {
                                         'title': {
@@ -109,6 +101,7 @@ assert response["acknowledged"]==True
 
 deploy_model(client, config["model_id"])
 for dataset in all_datasets:
+    index_name = config["index_prefix"] + dataset
     try:
         client.get(index=config["result_index_name"],id=dataset)
         print("search result exists for dataset "+dataset)
@@ -116,10 +109,10 @@ for dataset in all_datasets:
     except:
         print("search result not exists for dataset "+dataset)
         pass
+    client.indices.open(index=index_name,request_timeout=60)
     print("start search")
     times = []
     run_res = {}
-    index_name = config["index_prefix"] + dataset
         
     with open(config["qrels_dir"]+"/%s.json"%dataset) as f:
         qrels=json.load(f)
@@ -146,6 +139,7 @@ for dataset in all_datasets:
     print(dataset)
     print(body)
     client.index(index=config["result_index_name"],body=body,id=dataset,refresh=True)
+    client.indices.close(index=index_name, request_timeout=60)
     
 response = client.search(index=config["result_index_name"], body={"size":50,"query":{"match_all":{}}})
 with open(config["result_index_name"]+".json","w") as f:

@@ -20,6 +20,9 @@ def create_index(index_name):
         }
       },
       "mappings": {
+         "_source": {
+          "enabled": False
+        },
         "properties": {
             "text_sparse": {
                 "type": "knn_vector",
@@ -68,6 +71,7 @@ all_files = os.listdir(config["bulk_string_dir"])
 all_datasets = [file.split(".")[0] for file in all_files]
 
 for dataset in all_datasets:
+    print(client.cluster.stats()["nodes"]["jvm"]["mem"])
 # for dataset in ["quora"]:
     file_name = os.path.join(config["bulk_string_dir"], dataset + ".jsonl")
     with open(file_name) as f:
@@ -76,12 +80,15 @@ for dataset in all_datasets:
         index_name=json.loads(line)["index"]["_index"]
     try:
         response = client.cat.indices(index=index_name, format="json")
+        if response[0]["status"] != "close":
+            client.indices.close(index=index_name)
         print(index_name, " index already exists.")
-        bulk_file_doc_num = get_line_numbers(file_name)//2
-        index_doc_num = int(response[0]["docs.count"])
-        print("current doc number: %d, total doc number: %d"%(index_doc_num, bulk_file_doc_num))
-        if index_doc_num == bulk_file_doc_num:
-            continue
+        continue
+        # bulk_file_doc_num = get_line_numbers(file_name)//2
+        # index_doc_num = int(response[0]["docs.count"])
+        # print("current doc number: %d, total doc number: %d"%(index_doc_num, bulk_file_doc_num))
+        # if index_doc_num == bulk_file_doc_num:
+        #     continue
     except:
         print(index_name, " index not exists")
         
@@ -92,6 +99,11 @@ for dataset in all_datasets:
         lines = []
         num = 0
         for i,line in enumerate(tqdm(f)):
+            if i%200000 ==0:
+                print(client.cluster.stats()["nodes"]["jvm"]["mem"])
+                client.indices.refresh(index=index_name, request_timeout=300)
+                client.indices.flush(index=index_name, request_timeout=300)
+                print(client.cluster.stats()["nodes"]["jvm"]["mem"])
             lines.append(line)
             num+=1
             if num%(config["bulk_size"]*2)==0:
@@ -102,5 +114,6 @@ for dataset in all_datasets:
         if lines != []:
             response=client.bulk("".join(lines))
             assert response["errors"]==False
-        client.indices.refresh(index=index_name, request_timeout=60)
-        client.indices.flush(index=index_name, request_timeout=60)
+        client.indices.refresh(index=index_name, request_timeout=300)
+        client.indices.flush(index=index_name, request_timeout=300)
+        client.indices.close(index=index_name)

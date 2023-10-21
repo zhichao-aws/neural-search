@@ -2,6 +2,7 @@ import os
 import json
 import argparse
 import yaml
+import time
 
 from tqdm import tqdm
 from opensearchpy import OpenSearch
@@ -56,6 +57,7 @@ base_query_body = {
 
 deploy_model(client, config["model_id"])
 for dataset in all_datasets:
+    index_name = config["index_prefix"] + dataset
     try:
         client.get(index=config["result_index_name"],id=dataset)
         print("search result exists for dataset "+dataset)
@@ -63,10 +65,15 @@ for dataset in all_datasets:
     except:
         print("search result not exists for dataset "+dataset)
         pass
+    try:
+        client.indices.open(index=index_name)
+    except:
+        print("wait another 60s")
+        time.sleep(60)
     print("start search")
     times = []
     run_res = {}
-    index_name = config["index_prefix"] + dataset
+    
         
     with open(config["qrels_dir"]+"/%s.json"%dataset) as f:
         qrels=json.load(f)
@@ -76,7 +83,8 @@ for dataset in all_datasets:
     print("start query of index ",index_name)
     for _id,text in tqdm(queries.items()):
         base_query_body["query"]["neural"]["text_sparse"]["query_text"] = text
-        response=client.search(index=index_name,body=base_query_body)
+        print(base_query_body)
+        response=client.search(index=index_name,body=base_query_body, request_timeout=600)
         hits=response["hits"]["hits"]
         run_res[_id]={item["_id"]:item["_score"] for item in hits}
         times.append(response["took"])
@@ -91,6 +99,11 @@ for dataset in all_datasets:
     print(dataset)
     print(body)
     client.index(index=config["result_index_name"],body=body,id=dataset,refresh=True)
+    try:
+        client.indices.close(index=index_name)
+    except:
+        print("wait another 60s")
+        time.sleep(60)
     
 response = client.search(index=config["result_index_name"], body={"size":50,"query":{"match_all":{}}})
 with open(config["result_index_name"]+".json","w") as f:
