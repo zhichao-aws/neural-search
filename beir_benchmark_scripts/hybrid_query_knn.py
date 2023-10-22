@@ -48,7 +48,7 @@ base_query_body_origin = {
                 "text_sparse":{
                     "query_text":"",
                     "model_id": config["model_id"],
-                    "k": 20
+                    "k": 100
                 }
             }
         }

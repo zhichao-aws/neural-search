@@ -2,7 +2,6 @@ import os
 import json
 import argparse
 import yaml
-import time
 
 from tqdm import tqdm
 from opensearchpy import OpenSearch
@@ -44,12 +43,13 @@ all_datasets = [file.split(".")[0] for file in all_files]
 
 base_query_body = {
         "_source":False,
+        'size': 100,
         "query":{
             "neural":{
                 "text_sparse":{
                     "query_text":"",
                     "model_id": config["model_id"],
-                    "k": 20
+                    "k": 100
                 }
             }
         }
@@ -65,11 +65,7 @@ for dataset in all_datasets:
     except:
         print("search result not exists for dataset "+dataset)
         pass
-    try:
-        client.indices.open(index=index_name)
-    except:
-        print("wait another 60s")
-        time.sleep(60)
+    client.indices.open(index=index_name,request_timeout=60)
     print("start search")
     times = []
     run_res = {}
@@ -83,7 +79,6 @@ for dataset in all_datasets:
     print("start query of index ",index_name)
     for _id,text in tqdm(queries.items()):
         base_query_body["query"]["neural"]["text_sparse"]["query_text"] = text
-        print(base_query_body)
         response=client.search(index=index_name,body=base_query_body, request_timeout=600)
         hits=response["hits"]["hits"]
         run_res[_id]={item["_id"]:item["_score"] for item in hits}
@@ -99,12 +94,8 @@ for dataset in all_datasets:
     print(dataset)
     print(body)
     client.index(index=config["result_index_name"],body=body,id=dataset,refresh=True)
-    try:
-        client.indices.close(index=index_name)
-    except:
-        print("wait another 60s")
-        time.sleep(60)
-    
+    client.indices.close(index=index_name,request_timeout=60)
+
 response = client.search(index=config["result_index_name"], body={"size":50,"query":{"match_all":{}}})
 with open(config["result_index_name"]+".json","w") as f:
     json.dump(response,f)
