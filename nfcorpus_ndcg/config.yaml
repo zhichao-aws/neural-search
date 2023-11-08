@@ -1,0 +1,8 @@
+host: 
+port: 
+username: 
+password: 
+ingest_pipeline: sparse-pipeline
+index_name: sparse_index
+ingest_model_id: qeXQmIsBX3K8P73a5otW
+query_model_id: rOXqmIsBX3K8P73a0YvC
