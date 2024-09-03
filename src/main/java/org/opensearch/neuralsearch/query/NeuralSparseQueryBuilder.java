@@ -16,7 +16,7 @@ import java.util.function.Supplier;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
-import org.apache.lucene.document.FeatureField;
+import org.apache.lucene.document.SparseVectorField;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.Query;
@@ -37,6 +37,7 @@ import org.opensearch.index.query.QueryBuilder;
 import org.opensearch.index.query.QueryRewriteContext;
 import org.opensearch.index.query.QueryShardContext;
 import org.opensearch.neuralsearch.ml.MLCommonsClientAccessor;
+import org.opensearch.neuralsearch.plugin.SparseVectorFieldMapper;
 import org.opensearch.neuralsearch.util.NeuralSearchClusterUtil;
 import org.opensearch.neuralsearch.util.TokenWeightUtil;
 
@@ -370,7 +371,16 @@ public class NeuralSparseQueryBuilder extends AbstractQueryBuilder<NeuralSparseQ
         }
         BooleanQuery.Builder builder = new BooleanQuery.Builder();
         for (Map.Entry<String, Float> entry : queryTokens.entrySet()) {
-            builder.add(FeatureField.newLinearQuery(fieldName, entry.getKey(), entry.getValue()), BooleanClause.Occur.SHOULD);
+            builder.add(
+                SparseVectorField.newLinearQuery(
+                    fieldName,
+                    entry.getKey(),
+                    entry.getValue(),
+                    ((SparseVectorFieldMapper.SparseVectorFieldType) ft).getMaxScore(),
+                    ((SparseVectorFieldMapper.SparseVectorFieldType) ft).getBits()
+                ),
+                BooleanClause.Occur.SHOULD
+            );
         }
         return builder.build();
     }
@@ -389,8 +399,8 @@ public class NeuralSparseQueryBuilder extends AbstractQueryBuilder<NeuralSparseQ
     }
 
     private static void validateFieldType(MappedFieldType fieldType) {
-        if (Objects.isNull(fieldType) || !fieldType.typeName().equals("rank_features")) {
-            throw new IllegalArgumentException("[" + NAME + "] query only works on [rank_features] fields");
+        if (Objects.isNull(fieldType) || !fieldType.typeName().equals("sparse_vector")) {
+            throw new IllegalArgumentException("[" + NAME + "] query only works on [sparse_vector] fields");
         }
     }
 
