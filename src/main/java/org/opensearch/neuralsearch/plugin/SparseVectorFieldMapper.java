@@ -171,6 +171,7 @@ public class SparseVectorFieldMapper extends ParametrizedFieldMapper {
                             + "] in the same document"
                     );
                 }
+                if (bits == 0) continue;
                 int freq = SparseVectorField.quantize(value, maxScore, bits);
                 if (freq > 0) context.doc().addWithKey(key, new SparseVectorField(name(), feature, freq));
             } else {
