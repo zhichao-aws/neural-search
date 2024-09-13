@@ -1,0 +1,22 @@
+{% import "benchmark.helpers" as benchmark with context %}
+{
+    "name": "ms-marco-query",
+    "default": false,
+    "schedule": [
+        {
+            "operation": {
+                "name": "neural search",
+                "operation-type": "search",
+                "index": "msmarco",
+                "param-source": "neural-search-query-params-source",
+                "data_set_path": "datasets/transformed/trec-covid/msmarco.json",
+                "fields_to_excluded" : ["text","text_sparse","sparse_embedding"],
+                "model_id": "VESn6pEB93nTTRm1twVy"
+            },
+            "clients": 1,
+            "detailed-results": false,
+            "warmup-iterations": 50,
+            "iterations": 300
+        }
+    ]
+}

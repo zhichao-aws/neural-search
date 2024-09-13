@@ -142,6 +142,7 @@ class QueryNeuralSearchParamsSource:
         self.index_name: str = parse_string_parameter("index", params)
         self.fields_to_be_excluded_from_source = parse_list_parameter("fields_to_excluded", params)
         self.query_data_set_path: str = parse_string_parameter("data_set_path", params)
+        self.model_id = parse_string_parameter("model_id", params)
         self.query_data_file = QueryDataSet(self.query_data_set_path)
 
         # total number of queries in the file
@@ -177,27 +178,32 @@ class QueryNeuralSearchParamsSource:
 
         partition_x = copy.copy(self)
 
-        if self.total_queries % total_partitions == 0:
-            partition_x.queries_per_client = self.total_queries / total_partitions
-            partition_x.offset = (partition_index * partition_x.queries_per_client) + 1
-            partition_x.current = partition_index
-        else:
-            raise Exception("total_queries not divisible by total client provided")
+
+        partition_x.queries_per_client = self.total_queries // total_partitions
+        partition_x.offset = (partition_index * partition_x.queries_per_client) + 1
+        partition_x.current = partition_index
+
         return partition_x
 
     # This will be called per client
     def params(self):
 
         if self.query_count_of_client >= self.queries_per_client:
-            print("Stopping iteration for client {} ".format(self.current))
-            raise StopIteration
+            # print("Stopping iteration for client {} ".format(self.current))
+            # raise StopIteration
+            self.query_count_of_client=0
 
         query = json.loads(self.query_data_file.read_line(self.offset + self.query_count_of_client).strip())
+        if self.model_id!="":
+            if "neural_sparse" in query["query"]:
+                key = list(query["query"]["neural_sparse"].keys())[0]
+                query["query"]["neural_sparse"][key]["model_id"] = self.model_id
         self.query_count_of_client += 1
         self.percent_completed = self.query_count_of_client / self.queries_per_client
         q = {
             "index": self.index_name,
             "request-params": {
+                # "_source": False
                 "_source": {
                     "exclude": self.fields_to_be_excluded_from_source
                 }
