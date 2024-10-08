@@ -69,7 +69,9 @@ public final class SparseEncodingProcessor extends InferenceProcessor {
                         TokenWeightUtil.buildTokenWeightMap(ingestDocument.getSourceAndMetadata().get(key))
                     )
                 );
-            handler.accept(ingestDocument, null);
+            if (handler != null) {
+                handler.accept(ingestDocument, null);
+            }
             return;
         }
         mlCommonsClientAccessor.inferenceSentencesWithMapResult(this.modelId, inferenceList, ActionListener.wrap(resultMaps -> {

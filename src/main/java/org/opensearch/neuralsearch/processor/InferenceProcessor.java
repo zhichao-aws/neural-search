@@ -164,42 +164,16 @@ public abstract class InferenceProcessor extends AbstractBatchingProcessor {
             return;
         }
 
-        List<DataForInference> dataForInferences = getDataForInference(ingestDocumentWrappers);
-        List<String> inferenceList = constructInferenceTexts(dataForInferences);
-        if (inferenceList.isEmpty()) {
-            handler.accept(ingestDocumentWrappers);
-            return;
-        }
-        Tuple<List<String>, Map<Integer, Integer>> sortedResult = sortByLengthAndReturnOriginalOrder(inferenceList);
-        inferenceList = sortedResult.v1();
-        Map<Integer, Integer> originalOrder = sortedResult.v2();
-        doBatchExecute(inferenceList, results -> {
-            int startIndex = 0;
-            results = restoreToOriginalOrder(results, originalOrder);
-            for (DataForInference dataForInference : dataForInferences) {
-                if (dataForInference.getIngestDocumentWrapper().getException() != null
-                    || CollectionUtils.isEmpty(dataForInference.getInferenceList())) {
-                    continue;
-                }
-                List<?> inferenceResults = results.subList(startIndex, startIndex + dataForInference.getInferenceList().size());
-                startIndex += dataForInference.getInferenceList().size();
-                setVectorFieldsToDocument(
-                    dataForInference.getIngestDocumentWrapper().getIngestDocument(),
-                    dataForInference.getProcessMap(),
-                    inferenceResults
-                );
-            }
-            handler.accept(ingestDocumentWrappers);
-        }, exception -> {
-            for (IngestDocumentWrapper ingestDocumentWrapper : ingestDocumentWrappers) {
-                // The IngestDocumentWrapper might already run into exception and not sent for inference. So here we only
-                // set exception to IngestDocumentWrapper which doesn't have exception before.
-                if (ingestDocumentWrapper.getException() == null) {
-                    ingestDocumentWrapper.update(ingestDocumentWrapper.getIngestDocument(), exception);
-                }
-            }
-            handler.accept(ingestDocumentWrappers);
+        ingestDocumentWrappers.forEach(ingestDocumentWrapper -> {
+            this.doExecute(
+                ingestDocumentWrapper.getIngestDocument(),
+                Map.of((String) this.fieldMap.values().toArray()[0], "test"),
+                null,
+                null
+            );
         });
+
+        handler.accept(ingestDocumentWrappers);
     }
 
     private Tuple<List<String>, Map<Integer, Integer>> sortByLengthAndReturnOriginalOrder(List<String> inferenceList) {
