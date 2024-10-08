@@ -61,7 +61,7 @@ public class TokenWeightUtil {
         return results.stream().map(TokenWeightUtil::buildTokenWeightMap).collect(Collectors.toList());
     }
 
-    private static Map<String, Float> buildTokenWeightMap(Object uncastedMap) {
+    public static Map<String, Float> buildTokenWeightMap(Object uncastedMap) {
         if (!Map.class.isAssignableFrom(uncastedMap.getClass())) {
             throw new IllegalArgumentException("The expected inference result is a Map with String keys and Float values.");
         }

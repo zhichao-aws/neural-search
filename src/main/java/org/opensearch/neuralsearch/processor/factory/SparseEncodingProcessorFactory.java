@@ -4,9 +4,11 @@
  */
 package org.opensearch.neuralsearch.processor.factory;
 
+import static org.opensearch.ingest.ConfigurationUtils.readDoubleProperty;
 import static org.opensearch.ingest.ConfigurationUtils.readMap;
+import static org.opensearch.ingest.ConfigurationUtils.readOptionalStringProperty;
 import static org.opensearch.ingest.ConfigurationUtils.readStringProperty;
-import static org.opensearch.neuralsearch.processor.TextEmbeddingProcessor.TYPE;
+import static org.opensearch.neuralsearch.processor.SparseEncodingProcessor.TYPE;
 import static org.opensearch.neuralsearch.processor.TextEmbeddingProcessor.MODEL_ID_FIELD;
 import static org.opensearch.neuralsearch.processor.TextEmbeddingProcessor.FIELD_MAP_FIELD;
 
@@ -40,7 +42,20 @@ public class SparseEncodingProcessorFactory extends AbstractBatchingProcessor.Fa
     protected AbstractBatchingProcessor newProcessor(String tag, String description, int batchSize, Map<String, Object> config) {
         String modelId = readStringProperty(TYPE, tag, config, MODEL_ID_FIELD);
         Map<String, Object> fieldMap = readMap(TYPE, tag, config, FIELD_MAP_FIELD);
+        String pruningType = readOptionalStringProperty(TYPE, tag, config, "pruning_type");
+        float lambda = readDoubleProperty(TYPE, tag, config, "pruning_number").floatValue();
 
-        return new SparseEncodingProcessor(tag, description, batchSize, modelId, fieldMap, clientAccessor, environment, clusterService);
+        return new SparseEncodingProcessor(
+            tag,
+            description,
+            batchSize,
+            modelId,
+            fieldMap,
+            pruningType,
+            lambda,
+            clientAccessor,
+            environment,
+            clusterService
+        );
     }
 }
