@@ -37,6 +37,7 @@ import org.opensearch.index.query.QueryBuilder;
 import org.opensearch.index.query.QueryRewriteContext;
 import org.opensearch.index.query.QueryShardContext;
 import org.opensearch.neuralsearch.ml.MLCommonsClientAccessor;
+import org.opensearch.neuralsearch.processor.pruning.PruningUtils;
 import org.opensearch.neuralsearch.util.NeuralSearchClusterUtil;
 import org.opensearch.neuralsearch.util.TokenWeightUtil;
 
@@ -90,6 +91,8 @@ public class NeuralSparseQueryBuilder extends AbstractQueryBuilder<NeuralSparseQ
     // 2. If it's the sub query only build for two-phase, the value will be set to -1 * ratio of processor.
     // Then in the DoToQuery, we can use this to determine which type are this queryBuilder.
     private float twoPhasePruneRatio = 0F;
+    private String pruneType;
+    private float lambda = 0f;
 
     private static final Version MINIMAL_SUPPORTED_VERSION_DEFAULT_MODEL_ID = Version.V_2_13_0;
 
@@ -117,6 +120,8 @@ public class NeuralSparseQueryBuilder extends AbstractQueryBuilder<NeuralSparseQ
             Map<String, Float> queryTokens = in.readMap(StreamInput::readString, StreamInput::readFloat);
             this.queryTokensSupplier = () -> queryTokens;
         }
+        this.pruneType = in.readString();
+        this.lambda = in.readFloat();
         // to be backward compatible with previous version, we need to use writeString/readString API instead of optionalString API
         // after supporting query by tokens, queryText and modelId can be null. here we write an empty String instead
         if (StringUtils.EMPTY.equals(this.queryText)) {
@@ -172,6 +177,8 @@ public class NeuralSparseQueryBuilder extends AbstractQueryBuilder<NeuralSparseQ
         } else {
             out.writeBoolean(false);
         }
+        out.writeString(this.pruneType);
+        out.writeFloat(this.lambda);
     }
 
     @Override
@@ -190,6 +197,8 @@ public class NeuralSparseQueryBuilder extends AbstractQueryBuilder<NeuralSparseQ
         if (Objects.nonNull(queryTokensSupplier) && Objects.nonNull(queryTokensSupplier.get())) {
             xContentBuilder.field(QUERY_TOKENS_FIELD.getPreferredName(), queryTokensSupplier.get());
         }
+        xContentBuilder.field("prune_type", pruneType);
+        xContentBuilder.field("prune_number", lambda);
         printBoostAndQueryName(xContentBuilder);
         xContentBuilder.endObject();
         xContentBuilder.endObject();
@@ -274,6 +283,10 @@ public class NeuralSparseQueryBuilder extends AbstractQueryBuilder<NeuralSparseQ
             throw new IllegalArgumentException(String.format(Locale.ROOT, "%s field can not be empty", MODEL_ID_FIELD.getPreferredName()));
         }
 
+        if (sparseEncodingQueryBuilder.pruneType == null) {
+            sparseEncodingQueryBuilder.pruneType("none");
+        }
+
         return sparseEncodingQueryBuilder;
     }
 
@@ -294,6 +307,10 @@ public class NeuralSparseQueryBuilder extends AbstractQueryBuilder<NeuralSparseQ
                     sparseEncodingQueryBuilder.modelId(parser.text());
                 } else if (MAX_TOKEN_SCORE_FIELD.match(currentFieldName, parser.getDeprecationHandler())) {
                     sparseEncodingQueryBuilder.maxTokenScore(parser.floatValue());
+                } else if (currentFieldName.equals("prune_type")) {
+                    sparseEncodingQueryBuilder.pruneType(parser.text());
+                } else if (currentFieldName.equals("prune_number")) {
+                    sparseEncodingQueryBuilder.lambda(parser.floatValue());
                 } else {
                     throw new ParsingException(
                         parser.getTokenLocation(),
@@ -368,6 +385,7 @@ public class NeuralSparseQueryBuilder extends AbstractQueryBuilder<NeuralSparseQ
         if (Objects.isNull(queryTokens)) {
             throw new IllegalArgumentException("Query tokens cannot be null.");
         }
+        queryTokens = PruningUtils.pruningSparseVector(pruneType, lambda, queryTokens);
         BooleanQuery.Builder builder = new BooleanQuery.Builder();
         for (Map.Entry<String, Float> entry : queryTokens.entrySet()) {
             builder.add(FeatureField.newLinearQuery(fieldName, entry.getKey(), entry.getValue()), BooleanClause.Occur.SHOULD);
