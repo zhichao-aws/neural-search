@@ -1,0 +1,11 @@
+{
+    "encoding_type": "v2-distill",
+    "dataset": "nq",
+    "pruning_type": "abs_value",
+    "pruning_number": 0.1,
+    "pruning_type_search": "top_k",
+    "pruning_number_search": 64,
+    "ndcg": 0.55597,
+    "index_size": 7982000612,
+    "search_time": 40.28995728492737
+}

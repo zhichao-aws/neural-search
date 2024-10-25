@@ -1,0 +1,11 @@
+{
+    "encoding_type": "doc-v2-distill",
+    "dataset": "nfcorpus",
+    "pruning_type": "max_ratio",
+    "pruning_number": 0.1,
+    "pruning_type_search": "max_ratio",
+    "pruning_number_search": 0.15,
+    "ndcg": 0.34064,
+    "index_size": 10455872,
+    "search_time": 0.5148303508758545
+}

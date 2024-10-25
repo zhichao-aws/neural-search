@@ -1,0 +1,11 @@
+{
+    "encoding_type": "doc-v2-distill",
+    "dataset": "hotpotqa",
+    "pruning_type": "abs_value",
+    "pruning_number": 0.4,
+    "pruning_type_search": "max_ratio",
+    "pruning_number_search": 0.15,
+    "ndcg": 0.65086,
+    "index_size": 3423040126,
+    "search_time": 79.91159200668335
+}

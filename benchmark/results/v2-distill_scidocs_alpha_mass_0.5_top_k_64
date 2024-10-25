@@ -1,0 +1,11 @@
+{
+    "encoding_type": "v2-distill",
+    "dataset": "scidocs",
+    "pruning_type": "alpha_mass",
+    "pruning_number": 0.5,
+    "pruning_type_search": "top_k",
+    "pruning_number_search": 64,
+    "ndcg": 0.17177,
+    "index_size": 26060222,
+    "search_time": 10.681614637374878
+}

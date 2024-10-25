@@ -1,0 +1,11 @@
+{
+    "encoding_type": "doc-v2-distill",
+    "dataset": "fever",
+    "pruning_type": "alpha_mass",
+    "pruning_number": 0.7,
+    "pruning_type_search": "max_ratio",
+    "pruning_number_search": 0,
+    "ndcg": 0.79307,
+    "index_size": 5703350342,
+    "search_time": 71.56476712226868
+}

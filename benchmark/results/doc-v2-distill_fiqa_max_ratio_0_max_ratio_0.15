@@ -1,0 +1,11 @@
+{
+    "encoding_type": "doc-v2-distill",
+    "dataset": "fiqa",
+    "pruning_type": "max_ratio",
+    "pruning_number": 0,
+    "pruning_type_search": "max_ratio",
+    "pruning_number_search": 0.15,
+    "ndcg": 0.35591,
+    "index_size": 224742493,
+    "search_time": 6.8668811321258545
+}

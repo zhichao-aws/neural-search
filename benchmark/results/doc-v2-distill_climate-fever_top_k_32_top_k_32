@@ -1,0 +1,11 @@
+{
+    "encoding_type": "doc-v2-distill",
+    "dataset": "climate-fever",
+    "pruning_type": "top_k",
+    "pruning_number": 32,
+    "pruning_type_search": "top_k",
+    "pruning_number_search": 32,
+    "ndcg": 0.1899,
+    "index_size": 3192399159,
+    "search_time": 16.500490188598633
+}

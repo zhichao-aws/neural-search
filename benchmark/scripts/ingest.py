@@ -2,6 +2,8 @@ import os
 import json
 import subprocess
 
+from opensearchpy import OpenSearch
+
 INGEST_WORKLOAD_FILE = "ingest_workload.json"
 RUN_BENCHMARK_COMMAND = f"""
 opensearch-benchmark execute-test --target-host $HOSTS \
@@ -75,7 +77,7 @@ def prepare_workload_json(documents_fp, index_name, limit=1e8):
         json.dump(workload_template, f, indent=4)
 
 
-def ingest(index_name, file_path, auth=None, client=None):
+def ingest(index_name, file_path, auth=None):
     prepare_workload_json(file_path, index_name)
 
     command = f"""
@@ -85,6 +87,12 @@ def ingest(index_name, file_path, auth=None, client=None):
     print(command)
     subprocess.run(command, shell=True)
 
+    client = OpenSearch(
+        hosts=os.getenv("HOSTS").split(","),
+        http_auth=None if os.getenv("AUTH") is None else os.getenv("AUTH").split(","),
+        verify_certs=False,
+        ssl_show_warn=False,
+    )
     if client is not None:
         try:
             client.indices.refresh(index=index_name, request_timeout=600)

@@ -1,0 +1,11 @@
+{
+    "encoding_type": "doc-v2-distill",
+    "dataset": "webis-touche2020",
+    "pruning_type": "top_k",
+    "pruning_number": 48,
+    "pruning_type_search": "top_k",
+    "pruning_number_search": 32,
+    "ndcg": 0.26592,
+    "index_size": 317140865,
+    "search_time": 0.5215871334075928
+}

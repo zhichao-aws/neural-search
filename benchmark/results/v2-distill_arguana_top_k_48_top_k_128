@@ -1,0 +1,11 @@
+{
+    "encoding_type": "v2-distill",
+    "dataset": "arguana",
+    "pruning_type": "top_k",
+    "pruning_number": 48,
+    "pruning_type_search": "top_k",
+    "pruning_number_search": 128,
+    "ndcg": 0.53892,
+    "index_size": 8596321,
+    "search_time": 15.008180856704712
+}

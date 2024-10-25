@@ -1,0 +1,11 @@
+{
+    "encoding_type": "v2-distill",
+    "dataset": "dbpedia-entity",
+    "pruning_type": "alpha_mass",
+    "pruning_number": 0.5,
+    "pruning_type_search": "max_ratio",
+    "pruning_number_search": 0.15,
+    "ndcg": 0.41129,
+    "index_size": 2978492306,
+    "search_time": 4.32367730140686
+}

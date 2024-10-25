@@ -1,0 +1,11 @@
+{
+    "encoding_type": "doc-v2-distill",
+    "dataset": "arguana",
+    "pruning_type": "abs_value",
+    "pruning_number": 0.4,
+    "pruning_type_search": "top_k",
+    "pruning_number_search": 128,
+    "ndcg": 0.47136,
+    "index_size": 10834773,
+    "search_time": 14.99466848373413
+}

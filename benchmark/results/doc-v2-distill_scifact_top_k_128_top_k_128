@@ -1,0 +1,11 @@
+{
+    "encoding_type": "doc-v2-distill",
+    "dataset": "scifact",
+    "pruning_type": "top_k",
+    "pruning_number": 128,
+    "pruning_type_search": "top_k",
+    "pruning_number_search": 128,
+    "ndcg": 0.69497,
+    "index_size": 11456285,
+    "search_time": 3.1909501552581787
+}

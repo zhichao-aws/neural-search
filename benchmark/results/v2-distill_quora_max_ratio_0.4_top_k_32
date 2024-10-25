@@ -1,0 +1,11 @@
+{
+    "encoding_type": "v2-distill",
+    "dataset": "quora",
+    "pruning_type": "max_ratio",
+    "pruning_number": 0.4,
+    "pruning_type_search": "top_k",
+    "pruning_number_search": 32,
+    "ndcg": 0.80039,
+    "index_size": 131231802,
+    "search_time": 106.57677555084229
+}

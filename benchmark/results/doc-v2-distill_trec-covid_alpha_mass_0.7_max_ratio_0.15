@@ -1,0 +1,11 @@
+{
+    "encoding_type": "doc-v2-distill",
+    "dataset": "trec-covid",
+    "pruning_type": "alpha_mass",
+    "pruning_number": 0.7,
+    "pruning_type_search": "max_ratio",
+    "pruning_number_search": 0.15,
+    "ndcg": 0.65935,
+    "index_size": 272821286,
+    "search_time": 0.08125066757202148
+}

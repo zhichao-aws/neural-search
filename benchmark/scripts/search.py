@@ -3,20 +3,32 @@ import asyncio
 import aiohttp
 from aiohttp import ClientTimeout
 
+import traceback
 
-async def do_search(session, endpoint, query_body, post_process=None):
+
+async def do_search(
+    session, endpoint, query_body, post_process=None, max_retries=5, retry_delay=1
+):
     url = endpoint
     body = query_body
+    retries = 0
 
-    async with session.get(url, json=body, verify_ssl=False) as resp:
-        response = await resp.json()
-        if "error" in response:
-            raise Exception(response["error"])
+    while retries < max_retries:
+        try:
+            async with session.get(url, json=body, verify_ssl=False) as resp:
+                response = await resp.json()
+                if "error" in response:
+                    raise Exception(response["error"])
 
-    hits = response["hits"]["hits"]
-    if post_process is not None:
-        hits = post_process(hits)
-    return hits
+            hits = response["hits"]["hits"]
+            if post_process is not None:
+                hits = post_process(hits)
+            return hits
+        except Exception as e:
+            retries += 1
+            if retries == max_retries:
+                raise e
+            await asyncio.sleep(retry_delay)
 
 
 async def batch_search(
@@ -29,7 +41,7 @@ async def batch_search(
     endpoints = os.getenv("HOSTS").split(",")
     endpoints_num = len(endpoints)
 
-    timeout = ClientTimeout(total=60)
+    timeout = ClientTimeout(total=300)
     async with aiohttp.ClientSession(timeout=timeout) as session:
         tasks = []
         i = 0
@@ -50,9 +62,9 @@ async def batch_search(
         try:
             result = await asyncio.gather(*tasks)
         except Exception as e:
-            print("error happens when querying index ", index_name)
-            print(e)
-            return {"error": str(e)}
+            print(e, e.args)
+            traceback.print_exc()
+            assert 0
     return result
 
 
@@ -70,12 +82,16 @@ def search(queries: dict, index_name: str, batch_size: int = 50, query_lambda=No
                 queries=queries_encoded,
                 index_name=index_name,
                 get_query_lambda=query_lambda,
-                interval=0.001,
+                interval=0.01,
             )
         )
 
         for _id, res in zip(ids, search_results):
-            run_res[_id] = {hit["_source"]["id"]: hit["_score"] for hit in res}
+            try:
+                run_res[_id] = {hit["_source"]["id"]: hit["_score"] for hit in res}
+            except Exception as e:
+                traceback.print_exc()
+                assert 0
 
     for query_id, doc_dict in run_res.items():
         if query_id in doc_dict:

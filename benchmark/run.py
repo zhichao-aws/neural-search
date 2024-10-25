@@ -32,7 +32,11 @@ def prepare_index(client, index_name, fp):
     client.indices.create(
         index_name,
         body={
-            "settings": {"default_pipeline": PIPELINE_NAME},
+            "settings": {
+                "default_pipeline": PIPELINE_NAME,
+                "index.number_of_shards": 3,
+                "index.number_of_replicas": 0,
+            },
             "mappings": {"properties": {EMBEDDING_FIELD: {"type": "rank_features"}}},
         },
     )
@@ -41,7 +45,6 @@ def prepare_index(client, index_name, fp):
         index_name,
         fp,
         auth=None if os.getenv("AUTH") is None else os.getenv("AUTH").split(","),
-        client=client,
     )
 
 
@@ -66,6 +69,9 @@ def prepare_ingest_processor(client, pruning_type, pruning_number):
 
 
 if __name__ == "__main__":
+    last_ingest = None
+    flag = True
+
     assert len(sys.argv) == 2 and sys.argv[1].endswith(".yaml")
     with open(sys.argv[1]) as f:
         configs = yaml.safe_load(f)
@@ -98,21 +104,35 @@ if __name__ == "__main__":
                 queries = f.readlines()
             queries = [json.loads(line) for line in queries]
             queries = [(line["id"], line["sparse_embedding"]) for line in queries]
+            qrels = get_beir_qrels(beir_dataset)
 
             for pruning in configs.get("pruning")["ingest"]:
                 pruning_type = pruning["pruning_type"]
                 for pruning_number in pruning["pruning_number"]:
-                    logger.info(f"start ingest for {beir_dataset}, with {pruning_type} and {pruning_number}")
-                    prepare_ingest_processor(client, pruning_type, pruning_number)
-                    prepare_index(client, index_name, corpus_fp)
-                    qrels = get_beir_qrels(beir_dataset)
-                    
+                    if not flag:
+                        if [
+                            encoding_type,
+                            beir_dataset,
+                            pruning_type,
+                            pruning_number,
+                        ] != last_ingest:
+                            continue
+                        flag = True
+                    else:
+                        logger.info(
+                            f"start ingest for {beir_dataset}, with {pruning_type} and {pruning_number}"
+                        )
+                        prepare_ingest_processor(client, pruning_type, pruning_number)
+                        prepare_index(client, index_name, corpus_fp)
+
                     for pruning_search in configs.get("pruning")["search"]:
                         pruning_type_search = pruning_search["pruning_type"]
                         for pruning_number_search in pruning_search["pruning_number"]:
                             # run 2 times to warm up
                             for i in range(2):
-                                logger.info(f"start {i}-th search for {beir_dataset}, {pruning_type_search}, {pruning_number_search}")
+                                logger.info(
+                                    f"start {i}-th search for {beir_dataset}, {pruning_type_search}, {pruning_number_search}"
+                                )
                                 with Timer() as timer:
                                     run_res = search(
                                         queries=queries,
@@ -125,7 +145,7 @@ if __name__ == "__main__":
                                                     EMBEDDING_FIELD: {
                                                         "query_tokens": query,
                                                         "prune_type": pruning_type_search,
-                                                        "prune_number": pruning_number_search
+                                                        "prune_number": pruning_number_search,
                                                     },
                                                 }
                                             },
@@ -133,14 +153,18 @@ if __name__ == "__main__":
                                         },
                                     )
 
-                    
                             ndcg, map_, recall, p = EvaluateRetrieval.evaluate(
                                 qrels, run_res, [10]
                             )
                             ndcg = ndcg["NDCG@10"]
-                            index_size = client.indices.stats(index=index_name)["_all"][
-                                "primaries"
-                            ]["store"]["size_in_bytes"]
+                            try:
+                                index_size = client.indices.stats(
+                                    index=index_name, params={"timeout": 600}
+                                )["_all"]["primaries"]["store"]["size_in_bytes"]
+                            except:
+                                index_size = client.indices.stats(
+                                    index=index_name, params={"timeout": 600}
+                                )["_all"]["primaries"]["store"]["size_in_bytes"]
 
                             result = {
                                 "encoding_type": encoding_type,
@@ -158,6 +182,7 @@ if __name__ == "__main__":
                                 os.path.join(configs.get("result_dir"), file_name), "w"
                             ) as f:
                                 json.dump(result, f, indent=4)
-                                
-                logger.info(f"finish {beir_dataset}.")
-                client.indices.delete(index_name, request_timeout=600)
+
+                if flag:
+                    logger.info(f"finish {beir_dataset}.")
+                    client.indices.delete(index_name, request_timeout=600)
