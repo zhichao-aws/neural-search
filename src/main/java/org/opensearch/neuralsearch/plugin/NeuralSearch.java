@@ -27,11 +27,14 @@ import org.opensearch.core.common.io.stream.NamedWriteableRegistry;
 import org.opensearch.core.xcontent.NamedXContentRegistry;
 import org.opensearch.env.Environment;
 import org.opensearch.env.NodeEnvironment;
+import org.opensearch.index.analysis.PreBuiltAnalyzerProviderFactory;
 import org.opensearch.index.analysis.PreConfiguredTokenizer;
 import org.opensearch.index.analysis.TokenizerFactory;
 import org.opensearch.indices.analysis.AnalysisModule;
+import org.opensearch.indices.analysis.PreBuiltCacheFactory;
 import org.opensearch.ingest.Processor;
 import org.opensearch.ml.client.MachineLearningNodeClient;
+import org.opensearch.neuralsearch.analyzer.HFModelAnalyzer;
 import org.opensearch.neuralsearch.analyzer.HFModelTokenizer;
 import org.opensearch.neuralsearch.analyzer.HFModelTokenizerFactory;
 import org.opensearch.neuralsearch.executors.HybridQueryExecutor;
@@ -228,5 +231,14 @@ public class NeuralSearch extends Plugin
         List<PreConfiguredTokenizer> tokenizers = new ArrayList<>();
         tokenizers.add(PreConfiguredTokenizer.singleton(HFModelTokenizer.NAME, HFModelTokenizerFactory::createDefault));
         return tokenizers;
+    }
+
+    @Override
+    public List<PreBuiltAnalyzerProviderFactory> getPreBuiltAnalyzerProviderFactories() {
+        List<PreBuiltAnalyzerProviderFactory> analyzers = new ArrayList<>();
+        analyzers.add(
+            new PreBuiltAnalyzerProviderFactory("model_tokenizer", PreBuiltCacheFactory.CachingStrategy.LUCENE, HFModelAnalyzer::new)
+        );
+        return analyzers;
     }
 }

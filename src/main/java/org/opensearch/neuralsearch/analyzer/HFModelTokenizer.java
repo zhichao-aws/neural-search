@@ -7,15 +7,21 @@ package org.opensearch.neuralsearch.analyzer;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
+import java.util.Map;
 import java.util.function.Supplier;
 
+import com.google.common.reflect.TypeToken;
+import com.google.gson.Gson;
 import org.apache.lucene.analysis.Tokenizer;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.analysis.tokenattributes.PayloadAttribute;
+import org.apache.lucene.util.BytesRef;
 import org.opensearch.ml.common.exception.MLException;
 
 import com.google.common.io.CharStreams;
@@ -35,6 +41,7 @@ public class HFModelTokenizer extends Tokenizer {
     private final PayloadAttribute payloadAtt;
 
     private HuggingFaceTokenizer tokenizer;
+    private Map<String, Float> idf;
 
     private Encoding encoding;
 
@@ -43,6 +50,20 @@ public class HFModelTokenizer extends Tokenizer {
 
     public static HuggingFaceTokenizer initializeHFTokenizer(String name) {
         return withDJLContext(() -> HuggingFaceTokenizer.newInstance(name));
+    }
+
+    public static float bytesRefToFloat(BytesRef bytesRef) {
+        if (bytesRef.length != 4) {
+            throw new IllegalArgumentException("BytesRef must have length 4 to represent a float");
+        }
+
+        int intBits = 0;
+        intBits |= (bytesRef.bytes[bytesRef.offset] & 0xFF) << 24;
+        intBits |= (bytesRef.bytes[bytesRef.offset + 1] & 0xFF) << 16;
+        intBits |= (bytesRef.bytes[bytesRef.offset + 2] & 0xFF) << 8;
+        intBits |= (bytesRef.bytes[bytesRef.offset + 3] & 0xFF);
+
+        return Float.intBitsToFloat(intBits);
     }
 
     public static HuggingFaceTokenizer initializeHFTokenizerFromConfigString(String configString) {
@@ -64,6 +85,21 @@ public class HFModelTokenizer extends Tokenizer {
                 throw new RuntimeException(e);
             }
         });
+    }
+
+    public static Map<String, Float> getIDFFromResources() {
+        InputStream stream = HFModelTokenizer.class.getResourceAsStream("idf.json");
+        Gson gson = new Gson();
+        Type type = new TypeToken<Map<String, Float>>() {
+        }.getType();
+
+        try (InputStreamReader reader = new InputStreamReader(stream)) {
+            Map<String, Float> idfMap = gson.fromJson(reader, type);
+            return idfMap;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     private static HuggingFaceTokenizer withDJLContext(Supplier<HuggingFaceTokenizer> tokenizerSupplier) {
@@ -92,16 +128,21 @@ public class HFModelTokenizer extends Tokenizer {
     }
 
     public HFModelTokenizer(HuggingFaceTokenizer tokenizer) {
+        this(tokenizer, null);
+    }
+
+    public HFModelTokenizer(HuggingFaceTokenizer tokenizer, Map<String, Float> idf) {
         termAtt = addAttribute(CharTermAttribute.class);
         payloadAtt = addAttribute(PayloadAttribute.class);
         this.tokenizer = tokenizer;
+        this.idf = idf;
     }
 
     @Override
     public void reset() throws IOException {
         super.reset();
         tokenIdx = 0;
-        overflowingIdx = -1;
+        overflowingIdx = 0;
         String inputStr = CharStreams.toString(input);
         encoding = tokenizer.encode(inputStr, false, true);
     }
@@ -115,21 +156,22 @@ public class HFModelTokenizer extends Tokenizer {
         while (tokenIdx < curEncoding.getTokens().length || overflowingIdx < encoding.getOverflowing().length) {
             if (tokenIdx >= curEncoding.getTokens().length) {
                 tokenIdx = 0;
+                curEncoding = encoding.getOverflowing()[overflowingIdx];
                 overflowingIdx++;
-                if (overflowingIdx < encoding.getOverflowing().length) {
-                    curEncoding = encoding.getOverflowing()[overflowingIdx];
-                }
                 continue;
             }
             termAtt.append(curEncoding.getTokens()[tokenIdx]);
+            if (idf != null) {
+                float weight = idf.getOrDefault(curEncoding.getTokens()[tokenIdx], 1.f);
+                int intBits = Float.floatToIntBits(weight);
+                payloadAtt.setPayload(
+                    new BytesRef(new byte[] { (byte) (intBits >> 24), (byte) (intBits >> 16), (byte) (intBits >> 8), (byte) (intBits) })
+                );
+            }
             tokenIdx++;
             return true;
         }
 
         return false;
-        // int intBits = Float.floatToIntBits(10.0f);
-        // payloadAtt.setPayload(
-        // new BytesRef(new byte[] { (byte) (intBits >> 24), (byte) (intBits >> 16), (byte) (intBits >> 8), (byte) (intBits) })
-        // );
     }
 }

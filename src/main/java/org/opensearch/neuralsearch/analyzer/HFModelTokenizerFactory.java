@@ -13,27 +13,31 @@ import org.opensearch.index.analysis.AbstractTokenizerFactory;
 
 import ai.djl.huggingface.tokenizers.HuggingFaceTokenizer;
 
+import java.util.Map;
+
 public class HFModelTokenizerFactory extends AbstractTokenizerFactory {
     private String modelName;
     private HuggingFaceTokenizer tokenizer;
     static private HuggingFaceTokenizer defaultTokenizer;
+    static private Map<String, Float> idf;
 
     static public Tokenizer createDefault() {
         // what if throw exception during init?
         if (defaultTokenizer == null) {
             synchronized (HFModelTokenizerFactory.class) {
                 if (defaultTokenizer == null) {
-                    defaultTokenizer = HFModelTokenizer.initializeHFTokenizer("bert-base-uncased");
+                    // defaultTokenizer = HFModelTokenizer.initializeHFTokenizer("bert-base-uncased");
                     // defaultTokenizer = HFModelTokenizer.initializeHFTokenizer(
                     // "amazon/neural-sparse/opensearch-neural-sparse-tokenizer-v1",
                     // "1.0.1",
                     // MLModelFormat.TORCH_SCRIPT
                     // );
-                    // defaultTokenizer = HFModelTokenizer.initializeHFTokenizerFromResources();
+                    defaultTokenizer = HFModelTokenizer.initializeHFTokenizerFromResources();
+                    idf = HFModelTokenizer.getIDFFromResources();
                 }
             }
         }
-        return new HFModelTokenizer(defaultTokenizer);
+        return new HFModelTokenizer(defaultTokenizer, idf);
     }
 
     public HFModelTokenizerFactory(IndexSettings indexSettings, Environment environment, String name, Settings settings) {
