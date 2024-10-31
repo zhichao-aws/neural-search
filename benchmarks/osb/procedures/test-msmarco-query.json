@@ -14,10 +14,10 @@
                 "model_id": "VESn6pEB93nTTRm1twVy",
                 "method": "match"
             },
-            "clients": 1,
+            "clients": 16,
             "detailed-results": false,
             "warmup-iterations": 50,
-            "iterations": 300
+            "iterations": 30000
         }
     ]
 }

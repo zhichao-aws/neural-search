@@ -204,6 +204,17 @@ class QueryNeuralSearchParamsSource:
                     }
                 }
             }
+        elif self.method == "neural_sparse":
+            query = {
+                "query":{
+                    "neural_sparse":{
+                        "text_sparse": {
+                            "query_text": queryText,
+                            "analyzer_id": "model_tokenizer"
+                        }
+                    }
+                }
+            }
         else:
             assert 0
         self.query_count_of_client += 1
