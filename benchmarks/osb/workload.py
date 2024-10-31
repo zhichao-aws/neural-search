@@ -143,6 +143,7 @@ class QueryNeuralSearchParamsSource:
         self.fields_to_be_excluded_from_source = parse_list_parameter("fields_to_excluded", params)
         self.query_data_set_path: str = parse_string_parameter("data_set_path", params)
         self.model_id = parse_string_parameter("model_id", params)
+        self.method = parse_string_parameter("method", params)
         self.query_data_file = QueryDataSet(self.query_data_set_path)
 
         # total number of queries in the file
@@ -194,10 +195,17 @@ class QueryNeuralSearchParamsSource:
             self.query_count_of_client=0
 
         query = json.loads(self.query_data_file.read_line(self.offset + self.query_count_of_client).strip())
-        if self.model_id!="":
-            if "neural_sparse" in query["query"]:
-                key = list(query["query"]["neural_sparse"].keys())[0]
-                query["query"]["neural_sparse"][key]["model_id"] = self.model_id
+        queryText = query["text"]
+        if self.method == "match":
+            query = {
+                "query":{
+                    "match":{
+                        "text": queryText
+                    }
+                }
+            }
+        else:
+            assert 0
         self.query_count_of_client += 1
         self.percent_completed = self.query_count_of_client / self.queries_per_client
         q = {

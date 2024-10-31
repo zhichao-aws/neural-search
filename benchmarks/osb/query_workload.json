@@ -9,5 +9,5 @@
         }
     ],
     "operations": {{ benchmark.collect(parts="operations/*.json") }},
-    "test_procedures": [{{ benchmark.collect(parts="procedures/test-trec-covid-query.json") }}]
+    "test_procedures": [{{ benchmark.collect(parts="procedures/test-msmarco-query.json") }}]
 }
