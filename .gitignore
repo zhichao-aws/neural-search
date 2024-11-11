@@ -7,4 +7,10 @@ build
 .DS_Store
 .gitattributes
 
+*.py[cod]
+__pycache__
+cache_dir
 
+*.jsonl
+*.jsonl.offset
+*.png

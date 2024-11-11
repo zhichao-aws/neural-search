@@ -53,11 +53,13 @@ for encoding_type in ["doc-v2-distill", "v2-distill"]:
     }
     target_point[encoding_type] = {}
 
-    for pruning_type, df in pruning_data.items():
-        plt.plot(df["index_size"], df["ndcg"], label=pruning_type, marker="o")
+    for pruning_type_search, df in pruning_data.items():
+        plt.plot(df["index_size"], df["ndcg"], label=pruning_type_search, marker="o")
         closest_idx = (np.abs(df["index_size"] - target_index_size)).idxmin()
         closest_point = df.loc[closest_idx]
-        target_point[encoding_type][pruning_type] = closest_point["pruning_number"]
+        target_point[encoding_type][pruning_type_search] = closest_point[
+            "pruning_number"
+        ]
 
     plt.xlabel("Index Size", fontsize=14)
     plt.ylabel("NDCG", fontsize=14)
@@ -67,3 +69,45 @@ for encoding_type in ["doc-v2-distill", "v2-distill"]:
     # del plt
 
 print(target_point)
+print(yaml.dump(target_point))
+
+for encoding_type in target_point:
+    # for encoding_type in ["doc-v2-distill"]:
+    for pruning_type, pruning_number in target_point[encoding_type].items():
+        data = client.transport.perform_request(
+            "POST",
+            "/_plugins/_ppl",
+            body={
+                "query": f"source = search_results | where encoding_type ='{encoding_type}' AND pruning_type='{pruning_type}' AND pruning_number={pruning_number} \
+                | stats avg(ndcg) as ndcg, avg(total_took) as total_took by pruning_type_search,pruning_number_search"
+            },
+        )
+        for data_row in data["datarows"]:
+            data_row[-1] = (
+                str(data_row[-1]) if data_row[-2] != "top_k" else str(int(data_row[-1]))
+            )
+        data = pd.DataFrame(
+            data["datarows"],
+            columns=[
+                "ndcg",
+                "total_took",
+                "pruning_type_search",
+                "pruning_number_search",
+            ],
+        )
+        pruning_data = {
+            pruning_type_search: data[
+                data["pruning_type_search"] == pruning_type_search
+            ][["total_took", "ndcg", "pruning_number_search"]]
+            for pruning_type_search in data["pruning_type_search"].unique()
+        }
+        for pruning_type_search, df in pruning_data.items():
+            plt.plot(
+                df["total_took"], df["ndcg"], label=pruning_type_search, marker="o"
+            )
+
+        plt.xlabel("Total Took", fontsize=14)
+        plt.ylabel("NDCG", fontsize=14)
+        plt.legend()
+        plt.savefig(f"{encoding_type}_{pruning_type}_ndcg_total-took.png")
+        plt.close()

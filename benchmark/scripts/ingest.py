@@ -63,7 +63,7 @@ def prepare_workload_json(documents_fp, index_name, limit=1e8):
                     "retry-until-success": True,
                 }
             },
-            {"operation": {"operation-type": "bulk", "bulk-size": 1000}, "clients": 16},
+            {"operation": {"operation-type": "bulk", "bulk-size": 200}, "clients": 8},
         ],
     }
     lines_num = drop_lines_then_count(documents_fp, target=limit)
