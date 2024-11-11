@@ -125,63 +125,49 @@ if __name__ == "__main__":
                         prepare_ingest_processor(client, pruning_type, pruning_number)
                         prepare_index(client, index_name, corpus_fp)
 
-                    for pruning_search in configs.get("pruning")["search"]:
-                        pruning_type_search = pruning_search["pruning_type"]
-                        for pruning_number_search in pruning_search["pruning_number"]:
-                            # run 2 times to warm up
-                            for i in range(2):
-                                logger.info(
-                                    f"start {i}-th search for {beir_dataset}, {pruning_type_search}, {pruning_number_search}"
-                                )
-                                with Timer() as timer:
-                                    run_res = search(
-                                        queries=queries,
-                                        index_name=index_name,
-                                        batch_size=100,
-                                        query_lambda=lambda query: {
-                                            "size": 15,
-                                            "query": {
-                                                "neural_sparse": {
-                                                    EMBEDDING_FIELD: {
-                                                        "query_tokens": query,
-                                                        "prune_type": pruning_type_search,
-                                                        "prune_number": pruning_number_search,
-                                                    },
-                                                }
-                                            },
-                                            "_source": ["id"],
+                        run_res = search(
+                            queries=queries,
+                            index_name=index_name,
+                            batch_size=100,
+                            query_lambda=lambda query: {
+                                "size": 15,
+                                "query": {
+                                    "neural_sparse": {
+                                        EMBEDDING_FIELD: {
+                                            "query_tokens": query
                                         },
-                                    )
+                                    }
+                                },
+                                "_source": ["id"],
+                            },
+                        )
 
-                            ndcg, map_, recall, p = EvaluateRetrieval.evaluate(
-                                qrels, run_res, [10]
-                            )
-                            ndcg = ndcg["NDCG@10"]
-                            try:
-                                index_size = client.indices.stats(
-                                    index=index_name, params={"timeout": 600}
-                                )["_all"]["primaries"]["store"]["size_in_bytes"]
-                            except:
-                                index_size = client.indices.stats(
-                                    index=index_name, params={"timeout": 600}
-                                )["_all"]["primaries"]["store"]["size_in_bytes"]
+                        ndcg, map_, recall, p = EvaluateRetrieval.evaluate(
+                            qrels, run_res, [10]
+                        )
+                        ndcg = ndcg["NDCG@10"]
+                        try:
+                            index_size = client.indices.stats(
+                                index=index_name, params={"timeout": 600}
+                            )["_all"]["primaries"]["store"]["size_in_bytes"]
+                        except:
+                            index_size = client.indices.stats(
+                                index=index_name, params={"timeout": 600}
+                            )["_all"]["primaries"]["store"]["size_in_bytes"]
 
-                            result = {
-                                "encoding_type": encoding_type,
-                                "dataset": beir_dataset,
-                                "pruning_type": pruning_type,
-                                "pruning_number": pruning_number,
-                                "pruning_type_search": pruning_type_search,
-                                "pruning_number_search": pruning_number_search,
-                                "ndcg": ndcg,
-                                "index_size": index_size,
-                                "search_time": timer.execution_time,
-                            }
-                            file_name = f"""{encoding_type}_{beir_dataset}_{pruning_type}_{pruning_number}_{pruning_type_search}_{pruning_number_search}"""
-                            with open(
-                                os.path.join(configs.get("result_dir"), file_name), "w"
-                            ) as f:
-                                json.dump(result, f, indent=4)
+                        result = {
+                            "encoding_type": encoding_type,
+                            "dataset": beir_dataset,
+                            "pruning_type": pruning_type,
+                            "pruning_number": pruning_number,
+                            "ndcg": ndcg,
+                            "index_size": index_size
+                        }
+                        file_name = f"""{encoding_type}_{beir_dataset}_{pruning_type}_{pruning_number}"""
+                        with open(
+                            os.path.join(configs.get("result_dir"), file_name), "w"
+                        ) as f:
+                            json.dump(result, f, indent=4)
 
                 if flag:
                     logger.info(f"finish {beir_dataset}.")

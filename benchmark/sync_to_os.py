@@ -32,10 +32,7 @@ client.indices.create(
                 "index_size_bytes": {"type": "long"},
                 "ndcg": {"type": "float"},
                 "pruning_number": {"type": "float"},
-                "pruning_number_search": {"type": "float"},
-                "pruning_type": {"type": "keyword"},
-                "pruning_type_search": {"type": "keyword"},
-                "search_time": {"type": "float"},
+                "pruning_type": {"type": "keyword"}
             }
         }
     },
@@ -49,7 +46,6 @@ for file in os.listdir(result_dir):
     contents.append([file, content])
 
 max_index_sizes = {}
-max_search_time = {}
 encoding_types = set()
 datasets = set()
 
@@ -61,16 +57,13 @@ for file, content in contents:
 
 for encoding_type in encoding_types:
     max_index_sizes[encoding_type] = {}
-    max_search_time[encoding_type] = {}
     for dataset in datasets:
         file_name = f"{encoding_type}_{dataset}_max_ratio_0_max_ratio_0"
         with open(os.path.join(result_dir, file_name)) as f:
             content = json.load(f)
         max_index_sizes[encoding_type][dataset] = content["index_size"]
-        max_search_time[encoding_type][dataset] = content["search_time"]
 
 print(max_index_sizes)
-print(max_search_time)
 
 result_dir = configs["result_dir"]
 bulk_body = []
@@ -82,10 +75,6 @@ for file in os.listdir(result_dir):
     content["index_size"] = (
         content["index_size"]
         / max_index_sizes[content["encoding_type"]][content["dataset"]]
-    )
-    content["search_time"] = (
-        content["search_time"]
-        / max_search_time[content["encoding_type"]][content["dataset"]]
     )
     bulk_body.append(content)
 
