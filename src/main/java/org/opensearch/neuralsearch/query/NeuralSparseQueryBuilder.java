@@ -6,9 +6,11 @@
 package org.opensearch.neuralsearch.query;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Supplier;
 
 import lombok.AllArgsConstructor;
@@ -22,10 +24,15 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.lucene.BoundedLinearFeatureQuery;
+import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.TokenStream;
+import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
+import org.apache.lucene.analysis.tokenattributes.PayloadAttribute;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.BoostQuery;
 import org.apache.lucene.search.Query;
+import org.opensearch.OpenSearchException;
 import org.opensearch.common.SetOnce;
 import org.opensearch.core.ParseField;
 import org.opensearch.core.action.ActionListener;
@@ -39,6 +46,7 @@ import org.opensearch.index.query.AbstractQueryBuilder;
 import org.opensearch.index.query.QueryBuilder;
 import org.opensearch.index.query.QueryRewriteContext;
 import org.opensearch.index.query.QueryShardContext;
+import org.opensearch.neuralsearch.analysis.HFModelTokenizer;
 import org.opensearch.neuralsearch.ml.MLCommonsClientAccessor;
 import org.opensearch.neuralsearch.util.TokenWeightUtil;
 
@@ -64,7 +72,8 @@ public class NeuralSparseQueryBuilder extends AbstractQueryBuilder<NeuralSparseQ
     static final ParseField MODEL_ID_FIELD = new ParseField("model_id");
     @VisibleForTesting
     static final ParseField MAX_TOKEN_SCORE_FIELD = new ParseField("max_token_score");
-
+    @VisibleForTesting
+    static final ParseField ANALYZER_FIELD = new ParseField("analyzer");
     private static MLCommonsClientAccessor ML_CLIENT;
 
     public static void initialize(MLCommonsClientAccessor mlClient) {
@@ -74,6 +83,7 @@ public class NeuralSparseQueryBuilder extends AbstractQueryBuilder<NeuralSparseQ
     private String fieldName;
     private String queryText;
     private String modelId;
+    private String analyzer;
     private Float maxTokenScore;
     private Supplier<Map<String, Float>> queryTokensSupplier;
 
@@ -93,6 +103,7 @@ public class NeuralSparseQueryBuilder extends AbstractQueryBuilder<NeuralSparseQ
             Map<String, Float> queryTokens = in.readMap(StreamInput::readString, StreamInput::readFloat);
             this.queryTokensSupplier = () -> queryTokens;
         }
+        this.analyzer = in.readOptionalString();
     }
 
     @Override
@@ -107,6 +118,7 @@ public class NeuralSparseQueryBuilder extends AbstractQueryBuilder<NeuralSparseQ
         } else {
             out.writeBoolean(false);
         }
+        out.writeOptionalString(this.analyzer);
     }
 
     @Override
@@ -116,6 +128,9 @@ public class NeuralSparseQueryBuilder extends AbstractQueryBuilder<NeuralSparseQ
         xContentBuilder.field(QUERY_TEXT_FIELD.getPreferredName(), queryText);
         xContentBuilder.field(MODEL_ID_FIELD.getPreferredName(), modelId);
         if (maxTokenScore != null) xContentBuilder.field(MAX_TOKEN_SCORE_FIELD.getPreferredName(), maxTokenScore);
+        if (Objects.nonNull(analyzer)) {
+            xContentBuilder.field(ANALYZER_FIELD.getPreferredName(), analyzer);
+        }
         printBoostAndQueryName(xContentBuilder);
         xContentBuilder.endObject();
         xContentBuilder.endObject();
@@ -160,12 +175,14 @@ public class NeuralSparseQueryBuilder extends AbstractQueryBuilder<NeuralSparseQ
             sparseEncodingQueryBuilder.queryText(),
             String.format(Locale.ROOT, "%s field must be provided for [%s] query", QUERY_TEXT_FIELD.getPreferredName(), NAME)
         );
-        requireValue(
-            sparseEncodingQueryBuilder.modelId(),
-            String.format(Locale.ROOT, "%s field must be provided for [%s] query", MODEL_ID_FIELD.getPreferredName(), NAME)
-        );
+        if (Objects.isNull(sparseEncodingQueryBuilder.modelId())) {
+            sparseEncodingQueryBuilder.modelId("");
+        }
         if (sparseEncodingQueryBuilder.maxTokenScore != null && sparseEncodingQueryBuilder.maxTokenScore <= 0) {
             throw new IllegalArgumentException(MAX_TOKEN_SCORE_FIELD.getPreferredName() + " must be larger than 0.");
+        }
+        if (StringUtils.EMPTY.equals(sparseEncodingQueryBuilder.analyzer())) {
+            throw new IllegalArgumentException(String.format(Locale.ROOT, "%s field can not be empty", ANALYZER_FIELD.getPreferredName()));
         }
 
         return sparseEncodingQueryBuilder;
@@ -186,6 +203,8 @@ public class NeuralSparseQueryBuilder extends AbstractQueryBuilder<NeuralSparseQ
                     sparseEncodingQueryBuilder.queryText(parser.text());
                 } else if (MODEL_ID_FIELD.match(currentFieldName, parser.getDeprecationHandler())) {
                     sparseEncodingQueryBuilder.modelId(parser.text());
+                } else if (ANALYZER_FIELD.match(currentFieldName, parser.getDeprecationHandler())) {
+                    sparseEncodingQueryBuilder.analyzer(parser.text());
                 } else if (MAX_TOKEN_SCORE_FIELD.match(currentFieldName, parser.getDeprecationHandler())) {
                     sparseEncodingQueryBuilder.maxTokenScore(parser.floatValue());
                 } else {
@@ -210,7 +229,9 @@ public class NeuralSparseQueryBuilder extends AbstractQueryBuilder<NeuralSparseQ
         if (null != queryTokensSupplier) {
             return this;
         }
-
+        if (Objects.nonNull(analyzer)) {
+            return this;
+        }
         validateForRewrite(queryText, modelId);
         SetOnce<Map<String, Float>> queryTokensSetOnce = new SetOnce<>();
         queryRewriteContext.registerAsyncAction(
@@ -230,12 +251,37 @@ public class NeuralSparseQueryBuilder extends AbstractQueryBuilder<NeuralSparseQ
             .queryTokensSupplier(queryTokensSetOnce::get);
     }
 
+    private Map<String, Float> getQueryTokens(QueryShardContext context) {
+        if (Objects.nonNull(queryTokensSupplier) && !queryTokensSupplier.get().isEmpty()) {
+            return queryTokensSupplier.get();
+        } else if (Objects.nonNull(analyzer)) {
+            Map<String, Float> queryTokens = new HashMap<>();
+            Analyzer luceneAnalyzer = context.convertToShardContext().getIndexAnalyzers().getAnalyzers().get(this.analyzer);
+            try (TokenStream stream = luceneAnalyzer.tokenStream(fieldName, queryText)) {
+                stream.reset();
+                CharTermAttribute term = stream.addAttribute(CharTermAttribute.class);
+                PayloadAttribute payload = stream.addAttribute(PayloadAttribute.class);
+
+                while (stream.incrementToken()) {
+                    String token = term.toString();
+                    Float weight = Objects.isNull(payload.getPayload()) ? 1.0f : HFModelTokenizer.bytesToFloat(payload.getPayload().bytes);
+                    queryTokens.put(token, weight);
+                }
+                stream.end();
+            } catch (IOException e) {
+                throw new OpenSearchException("failed to analyze query text. ", e);
+            }
+            return queryTokens;
+        }
+        throw new IllegalArgumentException("Query tokens cannot be null.");
+    }
+
     @Override
     protected Query doToQuery(QueryShardContext context) throws IOException {
         final MappedFieldType ft = context.fieldMapper(fieldName);
         validateFieldType(ft);
 
-        Map<String, Float> queryTokens = queryTokensSupplier.get();
+        Map<String, Float> queryTokens = getQueryTokens(context);
         validateQueryTokens(queryTokens);
 
         final Float scoreUpperBound = maxTokenScore != null ? maxTokenScore : Float.MAX_VALUE;
@@ -291,8 +337,9 @@ public class NeuralSparseQueryBuilder extends AbstractQueryBuilder<NeuralSparseQ
         EqualsBuilder equalsBuilder = new EqualsBuilder().append(fieldName, obj.fieldName)
             .append(queryText, obj.queryText)
             .append(modelId, obj.modelId)
-            .append(maxTokenScore, obj.maxTokenScore);
-        if (queryTokensSupplier != null) {
+            .append(maxTokenScore, obj.maxTokenScore)
+            .append(analyzer, obj.analyzer);
+        if (Objects.nonNull(queryTokensSupplier)) {
             equalsBuilder.append(queryTokensSupplier.get(), obj.queryTokensSupplier.get());
         }
         return equalsBuilder.isEquals();
@@ -300,8 +347,12 @@ public class NeuralSparseQueryBuilder extends AbstractQueryBuilder<NeuralSparseQ
 
     @Override
     protected int doHashCode() {
-        HashCodeBuilder builder = new HashCodeBuilder().append(fieldName).append(queryText).append(modelId).append(maxTokenScore);
-        if (queryTokensSupplier != null) {
+        HashCodeBuilder builder = new HashCodeBuilder().append(fieldName)
+            .append(queryText)
+            .append(modelId)
+            .append(maxTokenScore)
+            .append(analyzer);
+        if (Objects.nonNull(queryTokensSupplier)) {
             builder.append(queryTokensSupplier.get());
         }
         return builder.toHashCode();
