@@ -4,6 +4,7 @@
  */
 package org.opensearch.neuralsearch.analysis;
 
+import lombok.extern.log4j.Log4j2;
 import org.apache.lucene.analysis.Tokenizer;
 import org.opensearch.common.settings.Settings;
 import org.opensearch.env.Environment;
@@ -15,6 +16,7 @@ import ai.djl.huggingface.tokenizers.HuggingFaceTokenizer;
 import java.util.Map;
 import java.util.Objects;
 
+@Log4j2
 public class HFModelTokenizerFactory extends AbstractTokenizerFactory {
     private final HuggingFaceTokenizer tokenizer;
     private final Map<String, Float> tokenWeights;
@@ -30,6 +32,7 @@ public class HFModelTokenizerFactory extends AbstractTokenizerFactory {
 
         static {
             try {
+                log.info("[1-click analyzer] Initializing default tokenizer");
                 TOKENIZER = DJLUtils.buildHuggingFaceTokenizer(DEFAULT_TOKENIZER_ID);
                 TOKEN_WEIGHTS = DJLUtils.fetchTokenWeights(DEFAULT_TOKENIZER_ID, DEFAULT_TOKEN_WEIGHTS_FILE);
             } catch (Exception e) {

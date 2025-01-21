@@ -271,6 +271,7 @@ public class NeuralSparseQueryBuilder extends AbstractQueryBuilder<NeuralSparseQ
             } catch (IOException e) {
                 throw new OpenSearchException("failed to analyze query text. ", e);
             }
+            log.info("[1-click analyzer] call analyzer at shard {} to get query tokens  [{}]", context.getShardId(), queryTokens);
             return queryTokens;
         }
         throw new IllegalArgumentException("Query tokens cannot be null.");
