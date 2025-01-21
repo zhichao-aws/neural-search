@@ -115,6 +115,32 @@ public class NeuralSearch extends Plugin
     }
 
     @Override
+    public Map<String, AnalysisModule.AnalysisProvider<TokenizerFactory>> getTokenizers() {
+        return Map.of(HFModelTokenizer.NAME, HFModelTokenizerFactory::new);
+    }
+
+    @Override
+    public List<PreConfiguredTokenizer> getPreConfiguredTokenizers() {
+        List<PreConfiguredTokenizer> tokenizers = new ArrayList<>();
+        tokenizers.add(PreConfiguredTokenizer.singleton(HFModelTokenizer.NAME, HFModelTokenizerFactory::createDefault));
+        return tokenizers;
+    }
+
+    @Override
+    public Map<String, AnalysisModule.AnalysisProvider<AnalyzerProvider<? extends Analyzer>>> getAnalyzers() {
+        return Map.of(HFModelAnalyzer.NAME, HFModelAnalyzerProvider::new);
+    }
+
+    @Override
+    public List<PreBuiltAnalyzerProviderFactory> getPreBuiltAnalyzerProviderFactories() {
+        List<PreBuiltAnalyzerProviderFactory> factories = new ArrayList<>();
+        factories.add(
+                new PreBuiltAnalyzerProviderFactory(HFModelAnalyzer.NAME, PreBuiltCacheFactory.CachingStrategy.ONE, HFModelAnalyzer::new)
+        );
+        return factories;
+    }
+
+    @Override
     public List<QuerySpec<?>> getQueries() {
         return Arrays.asList(
             new QuerySpec<>(NeuralQueryBuilder.NAME, NeuralQueryBuilder::new, NeuralQueryBuilder::fromXContent),
@@ -172,31 +198,5 @@ public class NeuralSearch extends Plugin
         Parameters parameters
     ) {
         return Map.of(NeuralQueryEnricherProcessor.TYPE, new NeuralQueryEnricherProcessor.Factory());
-    }
-
-    @Override
-    public Map<String, AnalysisModule.AnalysisProvider<TokenizerFactory>> getTokenizers() {
-        return Map.of(HFModelTokenizer.NAME, HFModelTokenizerFactory::new);
-    }
-
-    @Override
-    public List<PreConfiguredTokenizer> getPreConfiguredTokenizers() {
-        List<PreConfiguredTokenizer> tokenizers = new ArrayList<>();
-        tokenizers.add(PreConfiguredTokenizer.singleton(HFModelTokenizer.NAME, HFModelTokenizerFactory::createDefault));
-        return tokenizers;
-    }
-
-    @Override
-    public Map<String, AnalysisModule.AnalysisProvider<AnalyzerProvider<? extends Analyzer>>> getAnalyzers() {
-        return Map.of(HFModelAnalyzer.NAME, HFModelAnalyzerProvider::new);
-    }
-
-    @Override
-    public List<PreBuiltAnalyzerProviderFactory> getPreBuiltAnalyzerProviderFactories() {
-        List<PreBuiltAnalyzerProviderFactory> factories = new ArrayList<>();
-        factories.add(
-            new PreBuiltAnalyzerProviderFactory(HFModelAnalyzer.NAME, PreBuiltCacheFactory.CachingStrategy.ONE, HFModelAnalyzer::new)
-        );
-        return factories;
     }
 }
