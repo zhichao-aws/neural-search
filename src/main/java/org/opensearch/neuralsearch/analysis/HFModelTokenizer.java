@@ -9,16 +9,18 @@ import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.Objects;
 
-import com.google.common.io.CharStreams;
 import lombok.extern.log4j.Log4j2;
+
 import org.apache.lucene.analysis.Tokenizer;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.analysis.tokenattributes.OffsetAttribute;
 import org.apache.lucene.analysis.tokenattributes.PayloadAttribute;
+import org.apache.lucene.util.BytesRef;
 
 import ai.djl.huggingface.tokenizers.Encoding;
 import ai.djl.huggingface.tokenizers.HuggingFaceTokenizer;
-import org.apache.lucene.util.BytesRef;
+
+import com.google.common.io.CharStreams;
 
 @Log4j2
 public class HFModelTokenizer extends Tokenizer {

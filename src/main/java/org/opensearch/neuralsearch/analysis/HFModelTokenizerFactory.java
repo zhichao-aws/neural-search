@@ -4,7 +4,11 @@
  */
 package org.opensearch.neuralsearch.analysis;
 
+import java.util.Map;
+import java.util.Objects;
+
 import lombok.extern.log4j.Log4j2;
+
 import org.apache.lucene.analysis.Tokenizer;
 import org.opensearch.common.settings.Settings;
 import org.opensearch.env.Environment;
@@ -12,9 +16,6 @@ import org.opensearch.index.IndexSettings;
 import org.opensearch.index.analysis.AbstractTokenizerFactory;
 
 import ai.djl.huggingface.tokenizers.HuggingFaceTokenizer;
-
-import java.util.Map;
-import java.util.Objects;
 
 @Log4j2
 public class HFModelTokenizerFactory extends AbstractTokenizerFactory {
@@ -27,21 +28,21 @@ public class HFModelTokenizerFactory extends AbstractTokenizerFactory {
     private static class DefaultTokenizerHolder {
         static final HuggingFaceTokenizer TOKENIZER;
         static final Map<String, Float> TOKEN_WEIGHTS;
-        static private final String DEFAULT_TOKENIZER_ID = "opensearch-project/opensearch-neural-sparse-encoding-doc-v2-distill";
-        static private final String DEFAULT_TOKEN_WEIGHTS_FILE = "query_token_weights.txt";
+        static private final String TOKENIZER_ID = "opensearch-project/opensearch-neural-sparse-encoding-doc-v2-distill";
+        static private final String TOKEN_WEIGHTS_FILE = "query_token_weights.txt";
 
         static {
             try {
                 log.info("[1-click analyzer] Initializing default tokenizer");
-                TOKENIZER = DJLUtils.buildHuggingFaceTokenizer(DEFAULT_TOKENIZER_ID);
-                TOKEN_WEIGHTS = DJLUtils.fetchTokenWeights(DEFAULT_TOKENIZER_ID, DEFAULT_TOKEN_WEIGHTS_FILE);
+                TOKENIZER = DJLUtils.buildHuggingFaceTokenizer(TOKENIZER_ID);
+                TOKEN_WEIGHTS = DJLUtils.fetchTokenWeights(TOKENIZER_ID, TOKEN_WEIGHTS_FILE);
             } catch (Exception e) {
                 throw new RuntimeException("Failed to initialize default hf_model_tokenizer", e);
             }
         }
     }
 
-    static public Tokenizer createDefault() {
+    public static Tokenizer createDefault() {
         return new HFModelTokenizer(DefaultTokenizerHolder.TOKENIZER, DefaultTokenizerHolder.TOKEN_WEIGHTS);
     }
 

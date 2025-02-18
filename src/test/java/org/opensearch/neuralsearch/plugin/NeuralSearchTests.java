@@ -11,14 +11,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import org.opensearch.index.analysis.PreBuiltAnalyzerProviderFactory;
+import org.opensearch.index.analysis.PreConfiguredTokenizer;
 import org.opensearch.ingest.IngestService;
 import org.opensearch.ingest.Processor;
+import org.opensearch.neuralsearch.analysis.HFModelAnalyzer;
+import org.opensearch.neuralsearch.analysis.HFModelTokenizer;
 import org.opensearch.neuralsearch.processor.NeuralQueryEnricherProcessor;
 import org.opensearch.neuralsearch.processor.NormalizationProcessor;
+import org.opensearch.neuralsearch.processor.SparseEncodingProcessor;
 import org.opensearch.neuralsearch.processor.TextEmbeddingProcessor;
 import org.opensearch.neuralsearch.processor.factory.NormalizationProcessorFactory;
 import org.opensearch.neuralsearch.query.HybridQueryBuilder;
 import org.opensearch.neuralsearch.query.NeuralQueryBuilder;
+import org.opensearch.neuralsearch.query.NeuralSparseQueryBuilder;
 import org.opensearch.neuralsearch.query.OpenSearchQueryTestCase;
 import org.opensearch.neuralsearch.search.query.HybridQueryPhaseSearcher;
 import org.opensearch.plugins.SearchPipelinePlugin;
@@ -37,6 +43,7 @@ public class NeuralSearchTests extends OpenSearchQueryTestCase {
         assertFalse(querySpecs.isEmpty());
         assertTrue(querySpecs.stream().anyMatch(spec -> NeuralQueryBuilder.NAME.equals(spec.getName().getPreferredName())));
         assertTrue(querySpecs.stream().anyMatch(spec -> HybridQueryBuilder.NAME.equals(spec.getName().getPreferredName())));
+        assertTrue(querySpecs.stream().anyMatch(spec -> NeuralSparseQueryBuilder.NAME.equals(spec.getName().getPreferredName())));
     }
 
     public void testQueryPhaseSearcher() {
@@ -71,6 +78,7 @@ public class NeuralSearchTests extends OpenSearchQueryTestCase {
         Map<String, Processor.Factory> processors = plugin.getProcessors(processorParams);
         assertNotNull(processors);
         assertNotNull(processors.get(TextEmbeddingProcessor.TYPE));
+        assertNotNull(processors.get(SparseEncodingProcessor.TYPE));
     }
 
     public void testSearchPhaseResultsProcessors() {
@@ -95,5 +103,31 @@ public class NeuralSearchTests extends OpenSearchQueryTestCase {
         );
         assertNotNull(processors);
         assertNotNull(processors.get(NeuralQueryEnricherProcessor.TYPE));
+    }
+
+    public void testGetTokenizers() {
+        NeuralSearch plugin = new NeuralSearch();
+        Map tokenizers = plugin.getTokenizers();
+        assertNotNull(tokenizers.get(HFModelTokenizer.NAME));
+    }
+
+    public void testGetPreConfiguredTokenizers() {
+        NeuralSearch plugin = new NeuralSearch();
+        List tokenizers = plugin.getPreConfiguredTokenizers();
+        assertEquals(1, tokenizers.size());
+        assertEquals(HFModelTokenizer.NAME, ((PreConfiguredTokenizer) tokenizers.get(0)).getName());
+    }
+
+    public void testGetAnalyzers() {
+        NeuralSearch plugin = new NeuralSearch();
+        Map analyzers = plugin.getAnalyzers();
+        assertNotNull(analyzers.get(HFModelAnalyzer.NAME));
+    }
+
+    public void testGetPreBuiltAnalyzerProviderFactories() {
+        NeuralSearch plugin = new NeuralSearch();
+        List analyzers = plugin.getPreBuiltAnalyzerProviderFactories();
+        assertEquals(1, analyzers.size());
+        assertEquals(HFModelTokenizer.NAME, ((PreBuiltAnalyzerProviderFactory) analyzers.get(0)).getName());
     }
 }

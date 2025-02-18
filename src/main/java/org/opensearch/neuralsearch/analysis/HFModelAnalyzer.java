@@ -4,10 +4,10 @@
  */
 package org.opensearch.neuralsearch.analysis;
 
+import java.util.function.Supplier;
+
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.Tokenizer;
-
-import java.util.function.Supplier;
 
 public class HFModelAnalyzer extends Analyzer {
     public static final String NAME = "hf_model_tokenizer";

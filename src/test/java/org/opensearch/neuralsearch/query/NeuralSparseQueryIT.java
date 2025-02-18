@@ -150,6 +150,35 @@ public class NeuralSparseQueryIT extends BaseSparseEncodingIT {
     }
 
     /**
+     * Tests basic query:
+     * {
+     *     "query": {
+     *         "neural_sparse": {
+     *             "text_sparse": {
+     *                 "query_text": "Hello world a b",
+     *                 "analyzer": "standard",
+     *                 "boost": 2
+     *             }
+     *         }
+     *     }
+     * }
+     */
+    @SneakyThrows
+    public void testBasicQueryUsingQueryTextAndAnalyzer() {
+        initializeIndexIfNotExist(TEST_BASIC_INDEX_NAME);
+        NeuralSparseQueryBuilder sparseEncodingQueryBuilder = new NeuralSparseQueryBuilder().fieldName(TEST_NEURAL_SPARSE_FIELD_NAME_1)
+            .queryText(TEST_QUERY_TEXT)
+            .analyzer("standard")
+            .boost(2.0f);
+        Map<String, Object> searchResponseAsMap = search(TEST_BASIC_INDEX_NAME, sparseEncodingQueryBuilder, 1);
+        Map<String, Object> firstInnerHit = getFirstInnerHit(searchResponseAsMap);
+
+        assertEquals("1", firstInnerHit.get("_id"));
+        float expectedScore = 2 * computeExpectedScore(testRankFeaturesDoc, Map.of("hello", 1f, "world", 1f, "a", 1f, "b", 1f));
+        assertEquals(expectedScore, objectToFloat(firstInnerHit.get("_score")), DELTA);
+    }
+
+    /**
      * Tests rescore query:
      * {
      *     "query" : {

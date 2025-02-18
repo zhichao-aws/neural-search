@@ -135,7 +135,7 @@ public class NeuralSearch extends Plugin
     public List<PreBuiltAnalyzerProviderFactory> getPreBuiltAnalyzerProviderFactories() {
         List<PreBuiltAnalyzerProviderFactory> factories = new ArrayList<>();
         factories.add(
-                new PreBuiltAnalyzerProviderFactory(HFModelAnalyzer.NAME, PreBuiltCacheFactory.CachingStrategy.ONE, HFModelAnalyzer::new)
+            new PreBuiltAnalyzerProviderFactory(HFModelAnalyzer.NAME, PreBuiltCacheFactory.CachingStrategy.ONE, HFModelAnalyzer::new)
         );
         return factories;
     }

@@ -97,7 +97,7 @@ public class NeuralSparseQueryBuilder extends AbstractQueryBuilder<NeuralSparseQ
         super(in);
         this.fieldName = in.readString();
         this.queryText = in.readString();
-        this.modelId = in.readString();
+        this.modelId = in.readOptionalString();
         this.maxTokenScore = in.readOptionalFloat();
         if (in.readBoolean()) {
             Map<String, Float> queryTokens = in.readMap(StreamInput::readString, StreamInput::readFloat);
@@ -110,7 +110,7 @@ public class NeuralSparseQueryBuilder extends AbstractQueryBuilder<NeuralSparseQ
     protected void doWriteTo(StreamOutput out) throws IOException {
         out.writeString(fieldName);
         out.writeString(queryText);
-        out.writeString(modelId);
+        out.writeOptionalString(modelId);
         out.writeOptionalFloat(maxTokenScore);
         if (queryTokensSupplier != null && queryTokensSupplier.get() != null) {
             out.writeBoolean(true);
@@ -175,8 +175,17 @@ public class NeuralSparseQueryBuilder extends AbstractQueryBuilder<NeuralSparseQ
             sparseEncodingQueryBuilder.queryText(),
             String.format(Locale.ROOT, "%s field must be provided for [%s] query", QUERY_TEXT_FIELD.getPreferredName(), NAME)
         );
-        if (Objects.isNull(sparseEncodingQueryBuilder.modelId())) {
-            sparseEncodingQueryBuilder.modelId("");
+        if (Objects.isNull(sparseEncodingQueryBuilder.analyzer())) {
+            requireValue(
+                sparseEncodingQueryBuilder.modelId(),
+                String.format(
+                    Locale.ROOT,
+                    "Either %s field or %s field must be provided for [%s] query",
+                    MODEL_ID_FIELD.getPreferredName(),
+                    ANALYZER_FIELD.getPreferredName(),
+                    NAME
+                )
+            );
         }
         if (sparseEncodingQueryBuilder.maxTokenScore != null && sparseEncodingQueryBuilder.maxTokenScore <= 0) {
             throw new IllegalArgumentException(MAX_TOKEN_SCORE_FIELD.getPreferredName() + " must be larger than 0.");
@@ -251,7 +260,7 @@ public class NeuralSparseQueryBuilder extends AbstractQueryBuilder<NeuralSparseQ
             .queryTokensSupplier(queryTokensSetOnce::get);
     }
 
-    private Map<String, Float> getQueryTokens(QueryShardContext context) {
+    Map<String, Float> getQueryTokens(QueryShardContext context) {
         if (Objects.nonNull(queryTokensSupplier) && !queryTokensSupplier.get().isEmpty()) {
             return queryTokensSupplier.get();
         } else if (Objects.nonNull(analyzer)) {
