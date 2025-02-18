@@ -6,6 +6,7 @@ package org.opensearch.neuralsearch.analysis;
 
 import ai.djl.huggingface.tokenizers.HuggingFaceTokenizer;
 import ai.djl.util.Utils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -17,23 +18,37 @@ import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
 public class DJLUtils {
-    static private Path ML_CACHE_PATH;
-    static private String ML_CACHE_DIR_NAME = "ml_cache";
-    static private String HUGGING_FACE_BASE_URL = "https://huggingface.co/";
-    static private String HUGGING_FACE_RESOLVE_PATH = "resolve/main/";
+    static Path ML_CACHE_PATH;
+    private static final String ML_CACHE_DIR_NAME = "ml_cache";
+    private static final String HUGGING_FACE_BASE_URL = "https://huggingface.co/";
+    private static final String HUGGING_FACE_RESOLVE_PATH = "resolve/main/";
+    private static final List<String> ALLOWED_TOKENIZER_ID_PATTERN = List.of("^opensearch-project/[^/]*$");
 
-    static public void buildDJLCachePath(Path opensearchDataFolder) {
+    public static void buildDJLCachePath(Path opensearchDataFolder) {
         // the logic to build cache path is consistent with ml-commons plugin
         // see
         // https://github.com/opensearch-project/ml-commons/blob/14b971214c488aa3f4ab150d1a6cc379df1758be/ml-algorithms/src/main/java/org/opensearch/ml/engine/MLEngine.java#L53
         ML_CACHE_PATH = opensearchDataFolder.resolve(ML_CACHE_DIR_NAME);
     }
 
-    public static <T> T withDJLContext(Callable<T> action) throws PrivilegedActionException {
+    static boolean isValidTokenizerId(String tokenizerId) {
+        if (StringUtils.isEmpty(tokenizerId)) {
+            return false;
+        }
+        for (String pattern : ALLOWED_TOKENIZER_ID_PATTERN) {
+            if (tokenizerId.matches(pattern)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static <T> T withDJLContext(Callable<T> action) throws PrivilegedActionException {
         return AccessController.doPrivileged((PrivilegedExceptionAction<T>) () -> {
             ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
             try {
@@ -49,6 +64,9 @@ public class DJLUtils {
     }
 
     public static HuggingFaceTokenizer buildHuggingFaceTokenizer(String tokenizerId) {
+        if (!isValidTokenizerId(tokenizerId)) {
+            throw new IllegalArgumentException("tokenizer id [" + tokenizerId + "] is not allowed.");
+        }
         try {
             return withDJLContext(() -> HuggingFaceTokenizer.newInstance(tokenizerId));
         } catch (PrivilegedActionException e) {
@@ -56,7 +74,7 @@ public class DJLUtils {
         }
     }
 
-    public static Map<String, Float> parseInputStreamToTokenWeights(InputStream inputStream) {
+    static Map<String, Float> parseInputStreamToTokenWeights(InputStream inputStream) {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
             Map<String, Float> tokenWeights = new HashMap<>();
             String line;
@@ -79,10 +97,12 @@ public class DJLUtils {
     }
 
     public static Map<String, Float> fetchTokenWeights(String tokenizerId, String fileName) {
-        Map<String, Float> tokenWeights = new HashMap<>();
-        String url = HUGGING_FACE_BASE_URL + tokenizerId + "/" + HUGGING_FACE_RESOLVE_PATH + fileName;
+        if (!isValidTokenizerId(tokenizerId)) {
+            throw new IllegalArgumentException("tokenizer id [" + tokenizerId + "] is not allowed.");
+        }
 
-        InputStream inputStream = null;
+        String url = HUGGING_FACE_BASE_URL + tokenizerId + "/" + HUGGING_FACE_RESOLVE_PATH + fileName;
+        InputStream inputStream;
         try {
             inputStream = withDJLContext(() -> Utils.openUrl(url));
         } catch (PrivilegedActionException e) {

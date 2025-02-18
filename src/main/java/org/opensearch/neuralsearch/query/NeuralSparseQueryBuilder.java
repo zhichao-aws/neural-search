@@ -137,7 +137,7 @@ public class NeuralSparseQueryBuilder extends AbstractQueryBuilder<NeuralSparseQ
     }
 
     /**
-     * Copy this QueryBuilder for two phase rescorer, set the copy one's twoPhasePruneRatio to -1.
+     * Copy this QueryBuilder for two phase rescorer.
      * @param ratio the parameter of the NeuralSparseTwoPhaseProcessor, control how to split the queryTokens to two phase.
      * @return A copy NeuralSparseQueryBuilder for twoPhase, it will be added to the rescorer.
      */
@@ -385,7 +385,7 @@ public class NeuralSparseQueryBuilder extends AbstractQueryBuilder<NeuralSparseQ
         ));
     }
 
-    private Map<String, Float> getQueryTokens(QueryShardContext context) {
+    Map<String, Float> getQueryTokens(QueryShardContext context) {
         if (Objects.nonNull(queryTokensSupplier) && !queryTokensSupplier.get().isEmpty()) {
             return queryTokensSupplier.get();
         } else if (Objects.nonNull(analyzer)) {
@@ -471,7 +471,8 @@ public class NeuralSparseQueryBuilder extends AbstractQueryBuilder<NeuralSparseQ
             .append(maxTokenScore, obj.maxTokenScore)
             .append(neuralSparseQueryTwoPhaseInfo.getTwoPhasePruneRatio(), obj.neuralSparseQueryTwoPhaseInfo.getTwoPhasePruneRatio())
             .append(neuralSparseQueryTwoPhaseInfo.getStatus().getValue(), obj.neuralSparseQueryTwoPhaseInfo.getStatus().getValue())
-            .append(twoPhaseSharedQueryToken, obj.twoPhaseSharedQueryToken);
+            .append(twoPhaseSharedQueryToken, obj.twoPhaseSharedQueryToken)
+            .append(analyzer, obj.analyzer);
         if (Objects.nonNull(queryTokensSupplier)) {
             equalsBuilder.append(queryTokensSupplier.get(), obj.queryTokensSupplier.get());
         }
@@ -486,7 +487,8 @@ public class NeuralSparseQueryBuilder extends AbstractQueryBuilder<NeuralSparseQ
             .append(maxTokenScore)
             .append(neuralSparseQueryTwoPhaseInfo.getTwoPhasePruneRatio())
             .append(neuralSparseQueryTwoPhaseInfo.getStatus().getValue())
-            .append(twoPhaseSharedQueryToken);
+            .append(twoPhaseSharedQueryToken)
+            .append(analyzer);
         if (Objects.nonNull(queryTokensSupplier)) {
             builder.append(queryTokensSupplier.get());
         }
