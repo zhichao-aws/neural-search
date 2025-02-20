@@ -4,13 +4,8 @@
  */
 package org.opensearch.neuralsearch.analysis;
 
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.Map;
-
-import lombok.SneakyThrows;
 
 import org.junit.Before;
 import org.opensearch.test.OpenSearchTestCase;
@@ -67,28 +62,6 @@ public class DJLUtilsTests extends OpenSearchTestCase {
         Encoding result = tokenizer.encode("hello world");
         assertEquals(4, result.getIds().length);
         assertEquals(7592, result.getIds()[1]);
-    }
-
-    @SneakyThrows
-    public void testParseInputStreamToTokenWeights_InvalidFormat() {
-        String content = "token1\t0.5\ntoken2\n";
-        InputStream inputStream = new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8));
-        Exception exception = assertThrows(IllegalArgumentException.class, () -> DJLUtils.parseInputStreamToTokenWeights(inputStream));
-        assertEquals("Invalid line in token weights file: token2", exception.getMessage());
-
-        InputStream inputStream2 = new ByteArrayInputStream("test\tdata".getBytes());
-        Exception exception2 = assertThrows(NumberFormatException.class, () -> DJLUtils.parseInputStreamToTokenWeights(inputStream2));
-        assertEquals("For input string: \"data\"", exception2.getMessage());
-    }
-
-    public void testParseInputStreamToTokenWeights_thenSuccess() {
-        String content = "token1\t0.5\ntoken2\t0.2\n";
-        InputStream inputStream = new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8));
-
-        Map<String, Float> tokenWeights = DJLUtils.parseInputStreamToTokenWeights(inputStream);
-        assertEquals(2, tokenWeights.size());
-        assertEquals(0.5f, tokenWeights.get("token1"), 0.0f);
-        assertEquals(0.2f, tokenWeights.get("token2"), 0.0f);
     }
 
     public void testFetchTokenWeights_InvalidParams() {

@@ -9,6 +9,10 @@ import org.opensearch.env.Environment;
 import org.opensearch.index.IndexSettings;
 import org.opensearch.index.analysis.AbstractIndexAnalyzerProvider;
 
+/**
+ * Provider class for HFModelAnalyzer instances.
+ * Handles the creation and configuration of HFModelAnalyzer instances within OpenSearch.
+ */
 public class HFModelAnalyzerProvider extends AbstractIndexAnalyzerProvider<HFModelAnalyzer> {
     private final HFModelAnalyzer analyzer;
 

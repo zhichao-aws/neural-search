@@ -9,6 +9,10 @@ import java.util.function.Supplier;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.Tokenizer;
 
+/**
+ * Custom Lucene Analyzer that uses the HFModelTokenizer for text analysis.
+ * Provides a way to process text using Hugging Face models within OpenSearch.
+ */
 public class HFModelAnalyzer extends Analyzer {
     public static final String NAME = "hf_model_tokenizer";
     Supplier<Tokenizer> tokenizerSupplier;

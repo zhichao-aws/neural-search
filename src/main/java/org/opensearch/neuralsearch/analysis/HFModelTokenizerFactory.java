@@ -17,8 +17,14 @@ import org.opensearch.index.analysis.AbstractTokenizerFactory;
 
 import ai.djl.huggingface.tokenizers.HuggingFaceTokenizer;
 
+/**
+ * Factory class for creating HFModelTokenizer instances.
+ * Handles the initialization and configuration of tokenizers based on index settings.
+ */
 @Log4j2
 public class HFModelTokenizerFactory extends AbstractTokenizerFactory {
+    private static final String TOKENIZER_ID_FIELD = "tokenizer_id";
+    private static final String TOKEN_WEIGHTS_FILE_FIELD = "token_weights_file";
     private final HuggingFaceTokenizer tokenizer;
     private final Map<String, Float> tokenWeights;
 
@@ -33,7 +39,6 @@ public class HFModelTokenizerFactory extends AbstractTokenizerFactory {
 
         static {
             try {
-                log.info("[1-click analyzer] Initializing default tokenizer");
                 TOKENIZER = DJLUtils.buildHuggingFaceTokenizer(TOKENIZER_ID);
                 TOKEN_WEIGHTS = DJLUtils.fetchTokenWeights(TOKENIZER_ID, TOKEN_WEIGHTS_FILE);
             } catch (Exception e) {
@@ -42,6 +47,10 @@ public class HFModelTokenizerFactory extends AbstractTokenizerFactory {
         }
     }
 
+    /**
+     * Creates a default tokenizer instance with predefined settings.
+     * @return A new HFModelTokenizer instance with default HuggingFaceTokenizer.
+     */
     public static Tokenizer createDefault() {
         return new HFModelTokenizer(DefaultTokenizerHolder.TOKENIZER, DefaultTokenizerHolder.TOKEN_WEIGHTS);
     }
@@ -50,9 +59,9 @@ public class HFModelTokenizerFactory extends AbstractTokenizerFactory {
         // For custom tokenizer, the factory is created during IndexModule.newIndexService
         // And can be accessed via indexService.getIndexAnalyzers()
         super(indexSettings, settings, name);
-        String tokenizerId = settings.get("tokenizer_id", null);
+        String tokenizerId = settings.get(TOKENIZER_ID_FIELD, null);
         Objects.requireNonNull(tokenizerId, "tokenizer_id is required");
-        String tokenWeightsFileName = settings.get("token_weights_file", null);
+        String tokenWeightsFileName = settings.get(TOKEN_WEIGHTS_FILE_FIELD, null);
         tokenizer = DJLUtils.buildHuggingFaceTokenizer(tokenizerId);
         if (tokenWeightsFileName != null) {
             tokenWeights = DJLUtils.fetchTokenWeights(tokenizerId, tokenWeightsFileName);

@@ -46,6 +46,7 @@ import org.opensearch.index.query.AbstractQueryBuilder;
 import org.opensearch.index.query.QueryBuilder;
 import org.opensearch.index.query.QueryRewriteContext;
 import org.opensearch.index.query.QueryShardContext;
+import org.opensearch.neuralsearch.analysis.HFModelAnalyzer;
 import org.opensearch.neuralsearch.analysis.HFModelTokenizer;
 import org.opensearch.neuralsearch.ml.MLCommonsClientAccessor;
 import org.opensearch.neuralsearch.util.TokenWeightUtil;
@@ -75,6 +76,7 @@ public class NeuralSparseQueryBuilder extends AbstractQueryBuilder<NeuralSparseQ
     @VisibleForTesting
     static final ParseField ANALYZER_FIELD = new ParseField("analyzer");
     private static MLCommonsClientAccessor ML_CLIENT;
+    private static final String DEFAULT_ANALYZER = HFModelAnalyzer.NAME;
 
     public static void initialize(MLCommonsClientAccessor mlClient) {
         NeuralSparseQueryBuilder.ML_CLIENT = mlClient;
@@ -176,16 +178,7 @@ public class NeuralSparseQueryBuilder extends AbstractQueryBuilder<NeuralSparseQ
             String.format(Locale.ROOT, "%s field must be provided for [%s] query", QUERY_TEXT_FIELD.getPreferredName(), NAME)
         );
         if (Objects.isNull(sparseEncodingQueryBuilder.analyzer())) {
-            requireValue(
-                sparseEncodingQueryBuilder.modelId(),
-                String.format(
-                    Locale.ROOT,
-                    "Either %s field or %s field must be provided for [%s] query",
-                    MODEL_ID_FIELD.getPreferredName(),
-                    ANALYZER_FIELD.getPreferredName(),
-                    NAME
-                )
-            );
+            sparseEncodingQueryBuilder.analyzer(DEFAULT_ANALYZER);
         }
         if (sparseEncodingQueryBuilder.maxTokenScore != null && sparseEncodingQueryBuilder.maxTokenScore <= 0) {
             throw new IllegalArgumentException(MAX_TOKEN_SCORE_FIELD.getPreferredName() + " must be larger than 0.");
@@ -238,7 +231,7 @@ public class NeuralSparseQueryBuilder extends AbstractQueryBuilder<NeuralSparseQ
         if (null != queryTokensSupplier) {
             return this;
         }
-        if (Objects.nonNull(analyzer)) {
+        if (StringUtils.isEmpty(modelId) && Objects.nonNull(analyzer)) {
             return this;
         }
         validateForRewrite(queryText, modelId);
@@ -280,7 +273,6 @@ public class NeuralSparseQueryBuilder extends AbstractQueryBuilder<NeuralSparseQ
             } catch (IOException e) {
                 throw new OpenSearchException("failed to analyze query text. ", e);
             }
-            log.info("[1-click analyzer] call analyzer at shard {} to get query tokens  [{}]", context.getShardId(), queryTokens);
             return queryTokens;
         }
         throw new IllegalArgumentException("Query tokens cannot be null.");

@@ -231,7 +231,7 @@ public class NeuralSparseQueryBuilderTests extends OpenSearchTestCase {
     }
 
     @SneakyThrows
-    public void testFromXContent_whenBuildWithMissingModelId_thenFail() {
+    public void testFromXContent_whenBuildWithMissingModelId_thenSuccess() {
         /*
           {
               "VECTOR_FIELD": {
@@ -248,7 +248,8 @@ public class NeuralSparseQueryBuilderTests extends OpenSearchTestCase {
 
         XContentParser contentParser = createParser(xContentBuilder);
         contentParser.nextToken();
-        expectThrows(IllegalArgumentException.class, () -> NeuralSparseQueryBuilder.fromXContent(contentParser));
+        NeuralSparseQueryBuilder neuralSparseQueryBuilder = NeuralSparseQueryBuilder.fromXContent(contentParser);
+        assertEquals(HFModelAnalyzer.NAME, neuralSparseQueryBuilder.analyzer());
     }
 
     @SneakyThrows
@@ -574,7 +575,6 @@ public class NeuralSparseQueryBuilderTests extends OpenSearchTestCase {
     public void testRewrite_whenQueryTokensSupplierNull_andAnalyzerNotNull_thenReturnSelf() {
         NeuralSparseQueryBuilder sparseEncodingQueryBuilder = new NeuralSparseQueryBuilder().fieldName(FIELD_NAME)
             .queryText(QUERY_TEXT)
-            .modelId(MODEL_ID)
             .analyzer(ANALYZER_NAME);
         QueryBuilder queryBuilder = sparseEncodingQueryBuilder.doRewrite(null);
         assertSame(queryBuilder, sparseEncodingQueryBuilder);

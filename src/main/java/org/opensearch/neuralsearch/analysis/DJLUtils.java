@@ -23,6 +23,9 @@ import org.apache.commons.lang3.StringUtils;
 import ai.djl.huggingface.tokenizers.HuggingFaceTokenizer;
 import ai.djl.util.Utils;
 
+/**
+ * Utility class for DJL (Deep Java Library) operations related to tokenization and model handling.
+ */
 public class DJLUtils {
     static Path ML_CACHE_PATH;
     private static final String ML_CACHE_DIR_NAME = "ml_cache";
@@ -30,6 +33,10 @@ public class DJLUtils {
     private static final String HUGGING_FACE_RESOLVE_PATH = "resolve/main/";
     private static final List<String> ALLOWED_TOKENIZER_ID_PATTERN = List.of("^opensearch-project/[^/]*$");
 
+    /**
+     * Builds the DJL cache path based on the OpenSearch data folder.
+     * @param opensearchDataFolder The base OpenSearch data folder path
+     */
     public static void buildDJLCachePath(Path opensearchDataFolder) {
         // the logic to build cache path is consistent with ml-commons plugin
         // see
@@ -64,6 +71,13 @@ public class DJLUtils {
         });
     }
 
+    /**
+     * Creates a new HuggingFaceTokenizer instance for the given tokenizer ID.
+     * @param tokenizerId The ID of the tokenizer to create
+     * @return A new HuggingFaceTokenizer instance
+     * @throws IllegalArgumentException if the tokenizer ID is invalid
+     * @throws RuntimeException if tokenizer initialization fails
+     */
     public static HuggingFaceTokenizer buildHuggingFaceTokenizer(String tokenizerId) {
         if (!isValidTokenizerId(tokenizerId)) {
             throw new IllegalArgumentException("tokenizer id [" + tokenizerId + "] is not allowed.");
@@ -75,7 +89,7 @@ public class DJLUtils {
         }
     }
 
-    static Map<String, Float> parseInputStreamToTokenWeights(InputStream inputStream) {
+    private static Map<String, Float> parseInputStreamToTokenWeights(InputStream inputStream) {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
             Map<String, Float> tokenWeights = new HashMap<>();
             String line;
@@ -97,6 +111,14 @@ public class DJLUtils {
         }
     }
 
+    /**
+     * Fetches token weights from a specified file for a given tokenizer.
+     * @param tokenizerId The ID of the tokenizer
+     * @param fileName The name of the file containing token weights
+     * @return A map of token to weight mappings
+     * @throws IllegalArgumentException if the tokenizer ID is invalid
+     * @throws RuntimeException if file fetching or parsing fails
+     */
     public static Map<String, Float> fetchTokenWeights(String tokenizerId, String fileName) {
         if (!isValidTokenizerId(tokenizerId)) {
             throw new IllegalArgumentException("tokenizer id [" + tokenizerId + "] is not allowed.");

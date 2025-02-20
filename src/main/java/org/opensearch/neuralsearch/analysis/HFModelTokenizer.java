@@ -22,6 +22,10 @@ import ai.djl.huggingface.tokenizers.HuggingFaceTokenizer;
 
 import com.google.common.io.CharStreams;
 
+/**
+ * A Lucene Tokenizer implementation that uses Hugging Face tokenizer for tokenization.
+ * Supports token weighting and handles overflow scenarios.
+ */
 @Log4j2
 public class HFModelTokenizer extends Tokenizer {
     public static final String NAME = "hf_model_tokenizer";
@@ -60,7 +64,6 @@ public class HFModelTokenizer extends Tokenizer {
         overflowingIdx = -1;
         String inputStr = CharStreams.toString(input);
         encoding = tokenizer.encode(inputStr, false, true);
-        log.info("[1-click analyzer] call tokenizer for inputStr [{}]", inputStr);
     }
 
     private static boolean isLastTokenInEncodingSegment(int idx, Encoding encodingSegment) {
