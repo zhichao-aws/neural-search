@@ -26,7 +26,7 @@ public class HFModelTokenizerTests extends OpenSearchTestCase {
     public void setUp() throws Exception {
         super.setUp();
         DJLUtils.buildDJLCachePath(DJLUtilsTests.tmpDir);
-        huggingFaceTokenizer = DJLUtils.buildHuggingFaceTokenizer("opensearch-project/opensearch-neural-sparse-encoding-doc-v2-distill");
+        huggingFaceTokenizer = DJLUtils.buildHuggingFaceTokenizer("/analysis/tokenizer_en.json");
         tokenWeights = new HashMap<>();
         tokenWeights.put("hello", 0.5f);
         tokenWeights.put("world", 0.3f);

@@ -14,14 +14,11 @@ import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.Callable;
 
-import org.apache.commons.lang3.StringUtils;
-
 import ai.djl.huggingface.tokenizers.HuggingFaceTokenizer;
-import ai.djl.util.Utils;
 
 /**
  * Utility class for DJL (Deep Java Library) operations related to tokenization and model handling.
@@ -29,9 +26,6 @@ import ai.djl.util.Utils;
 public class DJLUtils {
     static Path ML_CACHE_PATH;
     private static final String ML_CACHE_DIR_NAME = "ml_cache";
-    private static final String HUGGING_FACE_BASE_URL = "https://huggingface.co/";
-    private static final String HUGGING_FACE_RESOLVE_PATH = "resolve/main/";
-    private static final List<String> ALLOWED_TOKENIZER_ID_PATTERN = List.of("^opensearch-project/[^/]*$");
 
     /**
      * Builds the DJL cache path based on the OpenSearch data folder.
@@ -42,18 +36,6 @@ public class DJLUtils {
         // see
         // https://github.com/opensearch-project/ml-commons/blob/14b971214c488aa3f4ab150d1a6cc379df1758be/ml-algorithms/src/main/java/org/opensearch/ml/engine/MLEngine.java#L53
         ML_CACHE_PATH = opensearchDataFolder.resolve(ML_CACHE_DIR_NAME);
-    }
-
-    static boolean isValidTokenizerId(String tokenizerId) {
-        if (StringUtils.isEmpty(tokenizerId)) {
-            return false;
-        }
-        for (String pattern : ALLOWED_TOKENIZER_ID_PATTERN) {
-            if (tokenizerId.matches(pattern)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     private static <T> T withDJLContext(Callable<T> action) throws PrivilegedActionException {
@@ -73,23 +55,25 @@ public class DJLUtils {
 
     /**
      * Creates a new HuggingFaceTokenizer instance for the given tokenizer ID.
-     * @param tokenizerId The ID of the tokenizer to create
+     * @param resourcePath The resource path of the tokenizer to create
      * @return A new HuggingFaceTokenizer instance
-     * @throws IllegalArgumentException if the tokenizer ID is invalid
      * @throws RuntimeException if tokenizer initialization fails
      */
-    public static HuggingFaceTokenizer buildHuggingFaceTokenizer(String tokenizerId) {
-        if (!isValidTokenizerId(tokenizerId)) {
-            throw new IllegalArgumentException("tokenizer id [" + tokenizerId + "] is not allowed.");
-        }
+    public static HuggingFaceTokenizer buildHuggingFaceTokenizer(String resourcePath) {
         try {
-            return withDJLContext(() -> HuggingFaceTokenizer.newInstance(tokenizerId));
+            return withDJLContext(() -> {
+                InputStream is = DJLUtils.class.getResourceAsStream(resourcePath);
+                if (Objects.isNull(is)) {
+                    throw new IllegalArgumentException("Invalid resource path " + resourcePath);
+                }
+                return HuggingFaceTokenizer.newInstance(is, null);
+            });
         } catch (PrivilegedActionException e) {
             throw new RuntimeException("Failed to initialize Hugging Face tokenizer. " + e);
         }
     }
 
-    private static Map<String, Float> parseInputStreamToTokenWeights(InputStream inputStream) {
+    private static Map<String, Float> parseInputStreamToTokenWeights(InputStream inputStream) throws IOException {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
             Map<String, Float> tokenWeights = new HashMap<>();
             String line;
@@ -106,32 +90,23 @@ public class DJLUtils {
                 tokenWeights.put(token, weight);
             }
             return tokenWeights;
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to parse token weights file. " + e);
         }
     }
 
     /**
      * Fetches token weights from a specified file for a given tokenizer.
-     * @param tokenizerId The ID of the tokenizer
-     * @param fileName The name of the file containing token weights
+     * @param resourcePath The resource path of the tokenizer to create
      * @return A map of token to weight mappings
-     * @throws IllegalArgumentException if the tokenizer ID is invalid
      * @throws RuntimeException if file fetching or parsing fails
      */
-    public static Map<String, Float> fetchTokenWeights(String tokenizerId, String fileName) {
-        if (!isValidTokenizerId(tokenizerId)) {
-            throw new IllegalArgumentException("tokenizer id [" + tokenizerId + "] is not allowed.");
+    public static Map<String, Float> fetchTokenWeights(String resourcePath) {
+        try (InputStream is = DJLUtils.class.getResourceAsStream(resourcePath)) {
+            if (Objects.isNull(is)) {
+                throw new IllegalArgumentException("Invalid resource path " + resourcePath);
+            }
+            return parseInputStreamToTokenWeights(is);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to parse token weights file.  " + e);
         }
-
-        String url = HUGGING_FACE_BASE_URL + tokenizerId + "/" + HUGGING_FACE_RESOLVE_PATH + fileName;
-        InputStream inputStream;
-        try {
-            inputStream = withDJLContext(() -> Utils.openUrl(url));
-        } catch (PrivilegedActionException e) {
-            throw new RuntimeException("Failed to download file from " + url, e);
-        }
-
-        return parseInputStreamToTokenWeights(inputStream);
     }
 }

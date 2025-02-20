@@ -5,7 +5,6 @@
 package org.opensearch.neuralsearch.analysis;
 
 import java.util.Map;
-import java.util.Objects;
 
 import lombok.extern.log4j.Log4j2;
 
@@ -23,24 +22,19 @@ import ai.djl.huggingface.tokenizers.HuggingFaceTokenizer;
  */
 @Log4j2
 public class HFModelTokenizerFactory extends AbstractTokenizerFactory {
-    private static final String TOKENIZER_ID_FIELD = "tokenizer_id";
-    private static final String TOKEN_WEIGHTS_FILE_FIELD = "token_weights_file";
-    private final HuggingFaceTokenizer tokenizer;
-    private final Map<String, Float> tokenWeights;
-
     /**
      * Atomically loads the HF tokenizer in a lazy fashion once the outer class accesses the static final set the first time.;
      */
     private static class DefaultTokenizerHolder {
         static final HuggingFaceTokenizer TOKENIZER;
         static final Map<String, Float> TOKEN_WEIGHTS;
-        static private final String TOKENIZER_ID = "opensearch-project/opensearch-neural-sparse-encoding-doc-v2-distill";
-        static private final String TOKEN_WEIGHTS_FILE = "query_token_weights.txt";
+        static private final String TOKENIZER_PATH = "/analysis/tokenizer_en.json";
+        static private final String TOKEN_WEIGHTS_PATH = "/analysis/token_weights_en.txt";
 
         static {
             try {
-                TOKENIZER = DJLUtils.buildHuggingFaceTokenizer(TOKENIZER_ID);
-                TOKEN_WEIGHTS = DJLUtils.fetchTokenWeights(TOKENIZER_ID, TOKEN_WEIGHTS_FILE);
+                TOKENIZER = DJLUtils.buildHuggingFaceTokenizer(TOKENIZER_PATH);
+                TOKEN_WEIGHTS = DJLUtils.fetchTokenWeights(TOKEN_WEIGHTS_PATH);
             } catch (Exception e) {
                 throw new RuntimeException("Failed to initialize default hf_model_tokenizer", e);
             }
@@ -59,20 +53,11 @@ public class HFModelTokenizerFactory extends AbstractTokenizerFactory {
         // For custom tokenizer, the factory is created during IndexModule.newIndexService
         // And can be accessed via indexService.getIndexAnalyzers()
         super(indexSettings, settings, name);
-        String tokenizerId = settings.get(TOKENIZER_ID_FIELD, null);
-        Objects.requireNonNull(tokenizerId, "tokenizer_id is required");
-        String tokenWeightsFileName = settings.get(TOKEN_WEIGHTS_FILE_FIELD, null);
-        tokenizer = DJLUtils.buildHuggingFaceTokenizer(tokenizerId);
-        if (tokenWeightsFileName != null) {
-            tokenWeights = DJLUtils.fetchTokenWeights(tokenizerId, tokenWeightsFileName);
-        } else {
-            tokenWeights = null;
-        }
     }
 
     @Override
     public Tokenizer create() {
         // the create method will be called for every single analyze request
-        return new HFModelTokenizer(tokenizer, tokenWeights);
+        return new HFModelTokenizer(DefaultTokenizerHolder.TOKENIZER, DefaultTokenizerHolder.TOKEN_WEIGHTS);
     }
 }
