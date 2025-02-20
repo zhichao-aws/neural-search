@@ -23,7 +23,7 @@ public class HFModelAnalyzerTests extends OpenSearchTestCase {
 
     @SneakyThrows
     public void testDefaultAnalyzer() {
-        HFModelAnalyzer analyzer = new HFModelAnalyzer();
+        HFModelAnalyzer analyzer = new HFModelAnalyzer(HFModelTokenizerFactory::createDefault);
         TokenStream tokenStream = analyzer.tokenStream("", "hello world");
         tokenStream.reset();
         CharTermAttribute termAttribute = tokenStream.addAttribute(CharTermAttribute.class);

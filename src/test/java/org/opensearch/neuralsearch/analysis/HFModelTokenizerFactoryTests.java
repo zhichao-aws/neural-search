@@ -37,4 +37,21 @@ public class HFModelTokenizerFactoryTests extends OpenSearchTestCase {
         assertEquals("[40 86 84 b6]", payloadAttribute.getPayload().toString());
         assertFalse(tokenizer.incrementToken());
     }
+
+    @SneakyThrows
+    public void testCreateDefaultMultilingual() {
+        Tokenizer tokenizer = HFModelTokenizerFactory.createDefaultMultilingual();
+        assertNotNull(tokenizer);
+        assertTrue(tokenizer instanceof HFModelTokenizer);
+        tokenizer.setReader(new StringReader("测"));
+        tokenizer.reset();
+        CharTermAttribute charTermAttribute = tokenizer.addAttribute(CharTermAttribute.class);
+        PayloadAttribute payloadAttribute = tokenizer.addAttribute(PayloadAttribute.class);
+
+        assertTrue(tokenizer.incrementToken());
+        assertEquals("测", charTermAttribute.toString());
+        // byte ref for the token weight of test
+        assertEquals("[3f dc 69 2f]", payloadAttribute.getPayload().toString());
+        assertFalse(tokenizer.incrementToken());
+    }
 }

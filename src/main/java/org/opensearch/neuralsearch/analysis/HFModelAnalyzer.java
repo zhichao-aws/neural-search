@@ -14,14 +14,9 @@ import org.apache.lucene.analysis.Tokenizer;
  * Provides a way to process text using Hugging Face models within OpenSearch.
  */
 public class HFModelAnalyzer extends Analyzer {
-    public static final String NAME = "hf_model_tokenizer";
     Supplier<Tokenizer> tokenizerSupplier;
 
-    public HFModelAnalyzer() {
-        this.tokenizerSupplier = HFModelTokenizerFactory::createDefault;
-    }
-
-    HFModelAnalyzer(Supplier<Tokenizer> tokenizerSupplier) {
+    public HFModelAnalyzer(Supplier<Tokenizer> tokenizerSupplier) {
         this.tokenizerSupplier = tokenizerSupplier;
     }
 

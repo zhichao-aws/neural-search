@@ -15,8 +15,8 @@ import org.opensearch.index.analysis.PreBuiltAnalyzerProviderFactory;
 import org.opensearch.index.analysis.PreConfiguredTokenizer;
 import org.opensearch.ingest.IngestService;
 import org.opensearch.ingest.Processor;
-import org.opensearch.neuralsearch.analysis.HFModelAnalyzer;
 import org.opensearch.neuralsearch.analysis.HFModelTokenizer;
+import org.opensearch.neuralsearch.analysis.HFModelTokenizerFactory;
 import org.opensearch.neuralsearch.processor.NeuralQueryEnricherProcessor;
 import org.opensearch.neuralsearch.processor.NormalizationProcessor;
 import org.opensearch.neuralsearch.processor.SparseEncodingProcessor;
@@ -114,20 +114,25 @@ public class NeuralSearchTests extends OpenSearchQueryTestCase {
     public void testGetPreConfiguredTokenizers() {
         NeuralSearch plugin = new NeuralSearch();
         List tokenizers = plugin.getPreConfiguredTokenizers();
-        assertEquals(1, tokenizers.size());
-        assertEquals(HFModelTokenizer.NAME, ((PreConfiguredTokenizer) tokenizers.get(0)).getName());
+        assertEquals(2, tokenizers.size());
+        assertEquals(HFModelTokenizerFactory.DEFAULT_TOKENIZER_NAME, ((PreConfiguredTokenizer) tokenizers.get(0)).getName());
+        assertEquals(HFModelTokenizerFactory.DEFAULT_MULTILINGUAL_TOKENIZER_NAME, ((PreConfiguredTokenizer) tokenizers.get(1)).getName());
     }
 
     public void testGetAnalyzers() {
         NeuralSearch plugin = new NeuralSearch();
         Map analyzers = plugin.getAnalyzers();
-        assertNotNull(analyzers.get(HFModelAnalyzer.NAME));
+        assertNotNull(analyzers.get(HFModelTokenizer.NAME));
     }
 
     public void testGetPreBuiltAnalyzerProviderFactories() {
         NeuralSearch plugin = new NeuralSearch();
         List analyzers = plugin.getPreBuiltAnalyzerProviderFactories();
-        assertEquals(1, analyzers.size());
-        assertEquals(HFModelTokenizer.NAME, ((PreBuiltAnalyzerProviderFactory) analyzers.get(0)).getName());
+        assertEquals(2, analyzers.size());
+        assertEquals(HFModelTokenizerFactory.DEFAULT_TOKENIZER_NAME, ((PreBuiltAnalyzerProviderFactory) analyzers.get(0)).getName());
+        assertEquals(
+            HFModelTokenizerFactory.DEFAULT_MULTILINGUAL_TOKENIZER_NAME,
+            ((PreBuiltAnalyzerProviderFactory) analyzers.get(1)).getName()
+        );
     }
 }

@@ -122,20 +122,39 @@ public class NeuralSearch extends Plugin
     @Override
     public List<PreConfiguredTokenizer> getPreConfiguredTokenizers() {
         List<PreConfiguredTokenizer> tokenizers = new ArrayList<>();
-        tokenizers.add(PreConfiguredTokenizer.singleton(HFModelTokenizer.NAME, HFModelTokenizerFactory::createDefault));
+        tokenizers.add(
+            PreConfiguredTokenizer.singleton(HFModelTokenizerFactory.DEFAULT_TOKENIZER_NAME, HFModelTokenizerFactory::createDefault)
+        );
+        tokenizers.add(
+            PreConfiguredTokenizer.singleton(
+                HFModelTokenizerFactory.DEFAULT_MULTILINGUAL_TOKENIZER_NAME,
+                HFModelTokenizerFactory::createDefaultMultilingual
+            )
+        );
         return tokenizers;
     }
 
     @Override
     public Map<String, AnalysisModule.AnalysisProvider<AnalyzerProvider<? extends Analyzer>>> getAnalyzers() {
-        return Map.of(HFModelAnalyzer.NAME, HFModelAnalyzerProvider::new);
+        return Map.of(HFModelTokenizer.NAME, HFModelAnalyzerProvider::new);
     }
 
     @Override
     public List<PreBuiltAnalyzerProviderFactory> getPreBuiltAnalyzerProviderFactories() {
         List<PreBuiltAnalyzerProviderFactory> factories = new ArrayList<>();
         factories.add(
-            new PreBuiltAnalyzerProviderFactory(HFModelAnalyzer.NAME, PreBuiltCacheFactory.CachingStrategy.ONE, HFModelAnalyzer::new)
+            new PreBuiltAnalyzerProviderFactory(
+                HFModelTokenizerFactory.DEFAULT_TOKENIZER_NAME,
+                PreBuiltCacheFactory.CachingStrategy.ONE,
+                () -> new HFModelAnalyzer(HFModelTokenizerFactory::createDefault)
+            )
+        );
+        factories.add(
+            new PreBuiltAnalyzerProviderFactory(
+                HFModelTokenizerFactory.DEFAULT_MULTILINGUAL_TOKENIZER_NAME,
+                PreBuiltCacheFactory.CachingStrategy.ONE,
+                () -> new HFModelAnalyzer(HFModelTokenizerFactory::createDefaultMultilingual)
+            )
         );
         return factories;
     }

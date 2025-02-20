@@ -52,6 +52,7 @@ import org.opensearch.index.query.QueryShardContext;
 import org.opensearch.neuralsearch.analysis.DJLUtils;
 import org.opensearch.neuralsearch.analysis.DJLUtilsTests;
 import org.opensearch.neuralsearch.analysis.HFModelAnalyzer;
+import org.opensearch.neuralsearch.analysis.HFModelTokenizerFactory;
 import org.opensearch.neuralsearch.ml.MLCommonsClientAccessor;
 import org.opensearch.test.OpenSearchTestCase;
 
@@ -249,7 +250,7 @@ public class NeuralSparseQueryBuilderTests extends OpenSearchTestCase {
         XContentParser contentParser = createParser(xContentBuilder);
         contentParser.nextToken();
         NeuralSparseQueryBuilder neuralSparseQueryBuilder = NeuralSparseQueryBuilder.fromXContent(contentParser);
-        assertEquals(HFModelAnalyzer.NAME, neuralSparseQueryBuilder.analyzer());
+        assertEquals(HFModelTokenizerFactory.DEFAULT_TOKENIZER_NAME, neuralSparseQueryBuilder.analyzer());
     }
 
     @SneakyThrows
@@ -594,13 +595,17 @@ public class NeuralSparseQueryBuilderTests extends OpenSearchTestCase {
 
         NeuralSparseQueryBuilder sparseEncodingQueryBuilder = new NeuralSparseQueryBuilder().fieldName(FIELD_NAME)
             .queryText("hello world")
-            .analyzer(HFModelAnalyzer.NAME);
+            .analyzer(HFModelTokenizerFactory.DEFAULT_TOKENIZER_NAME);
 
         QueryShardContext mockedQueryShardContext = mock(QueryShardContext.class);
         IndexAnalyzers mockIndexAnalyzers = new IndexAnalyzers(
             Map.of(
-                HFModelAnalyzer.NAME,
-                new NamedAnalyzer(HFModelAnalyzer.NAME, AnalyzerScope.GLOBAL, new HFModelAnalyzer()),
+                HFModelTokenizerFactory.DEFAULT_TOKENIZER_NAME,
+                new NamedAnalyzer(
+                    HFModelTokenizerFactory.DEFAULT_TOKENIZER_NAME,
+                    AnalyzerScope.GLOBAL,
+                    new HFModelAnalyzer(HFModelTokenizerFactory::createDefault)
+                ),
                 "default",
                 new NamedAnalyzer("default", AnalyzerScope.INDEX, new StandardAnalyzer())
             ),

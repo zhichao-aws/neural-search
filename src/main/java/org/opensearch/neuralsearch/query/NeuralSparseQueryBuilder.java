@@ -46,8 +46,8 @@ import org.opensearch.index.query.AbstractQueryBuilder;
 import org.opensearch.index.query.QueryBuilder;
 import org.opensearch.index.query.QueryRewriteContext;
 import org.opensearch.index.query.QueryShardContext;
-import org.opensearch.neuralsearch.analysis.HFModelAnalyzer;
 import org.opensearch.neuralsearch.analysis.HFModelTokenizer;
+import org.opensearch.neuralsearch.analysis.HFModelTokenizerFactory;
 import org.opensearch.neuralsearch.ml.MLCommonsClientAccessor;
 import org.opensearch.neuralsearch.util.TokenWeightUtil;
 
@@ -76,7 +76,7 @@ public class NeuralSparseQueryBuilder extends AbstractQueryBuilder<NeuralSparseQ
     @VisibleForTesting
     static final ParseField ANALYZER_FIELD = new ParseField("analyzer");
     private static MLCommonsClientAccessor ML_CLIENT;
-    private static final String DEFAULT_ANALYZER = HFModelAnalyzer.NAME;
+    private static final String DEFAULT_ANALYZER = HFModelTokenizerFactory.DEFAULT_TOKENIZER_NAME;
 
     public static void initialize(MLCommonsClientAccessor mlClient) {
         NeuralSparseQueryBuilder.ML_CLIENT = mlClient;
