@@ -46,7 +46,7 @@ public class HFModelTokenizerFactory extends AbstractTokenizerFactory {
      * @return A new HFModelTokenizer instance with default HuggingFaceTokenizer.
      */
     public static Tokenizer createDefault() {
-        return new HFModelTokenizer(DefaultTokenizerHolder.TOKENIZER, DefaultTokenizerHolder.TOKEN_WEIGHTS);
+        return new HFModelTokenizer(() -> DefaultTokenizerHolder.TOKENIZER, () -> DefaultTokenizerHolder.TOKEN_WEIGHTS);
     }
 
     public HFModelTokenizerFactory(IndexSettings indexSettings, Environment environment, String name, Settings settings) {
@@ -58,6 +58,6 @@ public class HFModelTokenizerFactory extends AbstractTokenizerFactory {
     @Override
     public Tokenizer create() {
         // the create method will be called for every single analyze request
-        return new HFModelTokenizer(DefaultTokenizerHolder.TOKENIZER, DefaultTokenizerHolder.TOKEN_WEIGHTS);
+        return new HFModelTokenizer(() -> DefaultTokenizerHolder.TOKENIZER, () -> DefaultTokenizerHolder.TOKEN_WEIGHTS);
     }
 }

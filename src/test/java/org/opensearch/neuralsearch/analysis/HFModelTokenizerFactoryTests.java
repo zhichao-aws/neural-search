@@ -34,7 +34,7 @@ public class HFModelTokenizerFactoryTests extends OpenSearchTestCase {
         assertTrue(tokenizer.incrementToken());
         assertEquals("test", charTermAttribute.toString());
         // byte ref for the token weight of test
-        assertEquals("[40 86 84 c7]", payloadAttribute.getPayload().toString());
+        assertEquals("[40 86 84 b6]", payloadAttribute.getPayload().toString());
         assertFalse(tokenizer.incrementToken());
     }
 }

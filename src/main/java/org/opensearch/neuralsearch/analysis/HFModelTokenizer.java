@@ -8,9 +8,11 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Supplier;
 
 import lombok.extern.log4j.Log4j2;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.lucene.analysis.Tokenizer;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.analysis.tokenattributes.OffsetAttribute;
@@ -34,27 +36,27 @@ public class HFModelTokenizer extends Tokenizer {
     private final CharTermAttribute termAtt;
     private final PayloadAttribute payloadAtt;
     private final OffsetAttribute offsetAtt;
-    private final HuggingFaceTokenizer tokenizer;
-    private final Map<String, Float> tokenWeights;
+    private final Supplier<HuggingFaceTokenizer> tokenizerSupplier;
+    private final Supplier<Map<String, Float>> tokenWeightsSupplier;
 
     private Encoding encoding;
     private int tokenIdx = 0;
     private int overflowingIdx = 0;
 
-    public HFModelTokenizer(HuggingFaceTokenizer huggingFaceTokenizer) {
-        this(huggingFaceTokenizer, null);
+    public HFModelTokenizer(Supplier<HuggingFaceTokenizer> huggingFaceTokenizerSupplier) {
+        this(huggingFaceTokenizerSupplier, null);
     }
 
-    public HFModelTokenizer(HuggingFaceTokenizer huggingFaceTokenizer, Map<String, Float> weights) {
+    public HFModelTokenizer(Supplier<HuggingFaceTokenizer> huggingFaceTokenizerSupplier, Supplier<Map<String, Float>> weightsSupplier) {
         termAtt = addAttribute(CharTermAttribute.class);
         offsetAtt = addAttribute(OffsetAttribute.class);
-        if (Objects.nonNull(weights)) {
+        if (Objects.nonNull(weightsSupplier)) {
             payloadAtt = addAttribute(PayloadAttribute.class);
         } else {
             payloadAtt = null;
         }
-        tokenizer = huggingFaceTokenizer;
-        tokenWeights = weights;
+        tokenizerSupplier = huggingFaceTokenizerSupplier;
+        tokenWeightsSupplier = weightsSupplier;
     }
 
     @Override
@@ -63,7 +65,9 @@ public class HFModelTokenizer extends Tokenizer {
         tokenIdx = 0;
         overflowingIdx = -1;
         String inputStr = CharStreams.toString(input);
-        encoding = tokenizer.encode(inputStr, false, true);
+        // For pre-built analyzer, when create new index service, reset() will be called with empty input in checkVersions
+        // And we want to lazy-load the tokenizer only really needed. So we use supplier, and skip empty input.
+        encoding = StringUtils.isEmpty(inputStr) ? null : tokenizerSupplier.get().encode(inputStr, false, true);
     }
 
     private static boolean isLastTokenInEncodingSegment(int idx, Encoding encodingSegment) {
@@ -81,6 +85,7 @@ public class HFModelTokenizer extends Tokenizer {
     @Override
     final public boolean incrementToken() throws IOException {
         clearAttributes();
+        if (Objects.isNull(encoding)) return false;
         Encoding curEncoding = overflowingIdx == -1 ? encoding : encoding.getOverflowing()[overflowingIdx];
 
         while (!isLastTokenInEncodingSegment(tokenIdx, curEncoding) || overflowingIdx < encoding.getOverflowing().length) {
@@ -99,10 +104,12 @@ public class HFModelTokenizer extends Tokenizer {
                     curEncoding.getCharTokenSpans()[tokenIdx].getStart(),
                     curEncoding.getCharTokenSpans()[tokenIdx].getEnd()
                 );
-                if (Objects.nonNull(tokenWeights)) {
+                if (Objects.nonNull(tokenWeightsSupplier)) {
                     // for neural sparse query, write the token weight to payload field
                     payloadAtt.setPayload(
-                        new BytesRef(floatToBytes(tokenWeights.getOrDefault(curEncoding.getTokens()[tokenIdx], DEFAULT_TOKEN_WEIGHT)))
+                        new BytesRef(
+                            floatToBytes(tokenWeightsSupplier.get().getOrDefault(curEncoding.getTokens()[tokenIdx], DEFAULT_TOKEN_WEIGHT))
+                        )
                     );
                 }
                 tokenIdx++;

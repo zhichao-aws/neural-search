@@ -34,7 +34,7 @@ public class HFModelTokenizerTests extends OpenSearchTestCase {
 
     @SneakyThrows
     public void testTokenizeWithoutWeights() {
-        HFModelTokenizer tokenizer = new HFModelTokenizer(huggingFaceTokenizer);
+        HFModelTokenizer tokenizer = new HFModelTokenizer(() -> huggingFaceTokenizer);
         tokenizer.setReader(new StringReader("hello world a"));
         tokenizer.reset();
 
@@ -62,7 +62,7 @@ public class HFModelTokenizerTests extends OpenSearchTestCase {
 
     @SneakyThrows
     public void testTokenizeWithWeights() {
-        HFModelTokenizer tokenizer = new HFModelTokenizer(huggingFaceTokenizer, tokenWeights);
+        HFModelTokenizer tokenizer = new HFModelTokenizer(() -> huggingFaceTokenizer, () -> tokenWeights);
         tokenizer.setReader(new StringReader("hello world a"));
         tokenizer.reset();
 
@@ -99,7 +99,7 @@ public class HFModelTokenizerTests extends OpenSearchTestCase {
             longText.append("hello world ");
         }
 
-        HFModelTokenizer tokenizer = new HFModelTokenizer(huggingFaceTokenizer);
+        HFModelTokenizer tokenizer = new HFModelTokenizer(() -> huggingFaceTokenizer);
         tokenizer.setReader(new StringReader(longText.toString()));
         tokenizer.reset();
 
