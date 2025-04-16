@@ -14,7 +14,7 @@ import java.util.concurrent.Callable
 
 buildscript {
     ext {
-        opensearch_version = System.getProperty("opensearch.version", "2.17.1-SNAPSHOT")
+        opensearch_version = System.getProperty("opensearch.version", "2.17.1")
         buildVersionQualifier = System.getProperty("build.version_qualifier", "")
         isSnapshot = "true" == System.getProperty("build.snapshot", "true")
         version_tokens = opensearch_version.tokenize('-')
@@ -23,9 +23,6 @@ buildscript {
         if (buildVersionQualifier) {
             opensearch_build += "-${buildVersionQualifier}"
             plugin_no_snapshot += "-${buildVersionQualifier}"
-        }
-        if (isSnapshot) {
-            opensearch_build += "-SNAPSHOT"
         }
         opensearch_group = "org.opensearch"
         opensearch_no_snapshot = opensearch_build.replace("-SNAPSHOT","")
@@ -259,6 +256,9 @@ dependencies {
     api group: 'org.opensearch', name:'opensearch-ml-client', version: "${opensearch_build}"
     testFixturesImplementation "org.opensearch.test:framework:${opensearch_version}"
     implementation group: 'org.apache.commons', name: 'commons-lang3', version: '3.14.0'
+    implementation group: 'ai.djl', name: 'api', version: '0.28.0'
+    implementation group: 'ai.djl.huggingface', name: 'tokenizers', version: '0.28.0'
+    testImplementation 'org.slf4j:slf4j-api:1.7.36'
     // ml-common excluded reflection for runtime so we need to add it by ourselves.
     // https://github.com/opensearch-project/ml-commons/commit/464bfe34c66d7a729a00dd457f03587ea4e504d9
     // TODO: Remove following three lines of dependencies if ml-common include them in their jar
