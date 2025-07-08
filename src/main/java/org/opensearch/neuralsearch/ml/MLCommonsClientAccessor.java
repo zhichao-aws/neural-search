@@ -28,6 +28,7 @@ import org.opensearch.ml.common.dataset.MLInputDataset;
 import org.opensearch.ml.common.dataset.TextDocsInputDataSet;
 import org.opensearch.ml.common.dataset.TextSimilarityInputDataSet;
 import org.opensearch.ml.common.input.MLInput;
+import org.opensearch.ml.common.input.parameter.textembedding.AsymmetricTextEmbeddingParameters;
 import org.opensearch.ml.common.output.MLOutput;
 import org.opensearch.ml.common.output.model.ModelResultFilter;
 import org.opensearch.ml.common.output.model.ModelTensor;
@@ -197,7 +198,11 @@ public class MLCommonsClientAccessor {
     private MLInput createMLTextInput(final List<String> targetResponseFilters, List<String> inputText) {
         final ModelResultFilter modelResultFilter = new ModelResultFilter(false, true, targetResponseFilters, null);
         final MLInputDataset inputDataset = new TextDocsInputDataSet(inputText, modelResultFilter);
-        return new MLInput(FunctionName.TEXT_EMBEDDING, null, inputDataset);
+        AsymmetricTextEmbeddingParameters parameters = new AsymmetricTextEmbeddingParameters(
+            null,
+            AsymmetricTextEmbeddingParameters.SparseEmbeddingFormat.TOKEN_ID
+        );
+        return new MLInput(FunctionName.TEXT_EMBEDDING, parameters, inputDataset);
     }
 
     private MLInput createMLTextPairsInput(final String query, final List<String> inputText) {
