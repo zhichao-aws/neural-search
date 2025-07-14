@@ -22,12 +22,14 @@ import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.analysis.tokenattributes.PayloadAttribute;
+import org.apache.lucene.analysis.tokenattributes.TypeAttribute;
 import org.apache.lucene.document.FeatureField;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.Query;
 import org.opensearch.OpenSearchException;
 import org.opensearch.Version;
+import org.opensearch.ml.common.input.parameter.textembedding.SparseEmbeddingFormat;
 import org.opensearch.neuralsearch.processor.NeuralQueryEnricherProcessor;
 import org.opensearch.neuralsearch.stats.events.EventStatName;
 import org.opensearch.neuralsearch.stats.events.EventStatsManager;
@@ -460,6 +462,8 @@ public class NeuralSparseQueryBuilder extends AbstractQueryBuilder<NeuralSparseQ
                 stream.reset();
                 CharTermAttribute term = stream.addAttribute(CharTermAttribute.class);
                 PayloadAttribute payload = stream.addAttribute(PayloadAttribute.class);
+                TypeAttribute typeAttr = stream.addAttribute(TypeAttribute.class);
+                typeAttr.setType(SparseEmbeddingFormat.TOKEN_ID.toString());
 
                 while (stream.incrementToken()) {
                     String token = term.toString();
