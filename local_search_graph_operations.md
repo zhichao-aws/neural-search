@@ -211,7 +211,13 @@ for text_id in entity.text_unit_ids or []:
 
 ### Operation 5: Covariate Retrieval (Entities → Covariates)
 
-**Purpose**: Get metadata/claims associated with entities
+**Purpose**: Get metadata/claims/attributes associated with entities
+
+**What are Covariates**: Entity-linked metadata such as:
+- Claims about entities (assertions, facts)
+- Temporal attributes (start_date, end_date)
+- Status information
+- Custom entity attributes
 
 **File**: `graphrag/query/context_builder/local_context.py:123-125`
 
@@ -223,7 +229,30 @@ for entity in selected_entities:
     ])
 ```
 
-**Operation Type**: Attribute matching via `covariate.subject_id == entity.title`
+**Called from**: `graphrag/query/structured_search/local_search/mixed_context.py:435-446`
+```python
+# Build covariate context for each covariate type
+for covariate in self.covariates:
+    covariate_context, covariate_context_data = build_covariates_context(
+        selected_entities=added_entities,
+        covariates=self.covariates[covariate],
+        ...
+    )
+```
+
+**Operation Type**: Graph attribute lookup via `covariate.subject_id → entity.title`
+
+**Why this is a Graph Operation**:
+- Covariates are **entity attributes stored as separate nodes** in the knowledge graph
+- Links covariates to entities via `covariate.subject_id` → `entity.title` relationship
+- Enables retrieval of entity-specific metadata that complements structural graph information
+- Part of the entity's graph neighborhood (1-hop from entity node)
+
+**Used By**:
+- ✅ **Local Search**: Actively retrieves covariates for selected entities
+- ✅ **DRIFT Search**: Via Local Search in follow-up phase
+- ❌ **Basic Search**: Not used
+- ❌ **Global Search**: Not used (operates at community level)
 
 ---
 
@@ -341,6 +370,49 @@ DRIFT does **not** add new graph operations. It only adds:
 - **Graph operations**: Delegates to `LocalSearch.search()` for all graph traversal
 
 **Formula**: `DRIFT graph operations = Local Search graph operations × N iterations`
+
+---
+
+## Covariate as a Graph Operation
+
+**Why Covariate retrieval is a graph operation**:
+
+Covariates represent **entity-linked attributes stored as separate nodes** in the knowledge graph:
+
+```python
+@dataclass
+class Covariate(Identified):
+    subject_id: str              # [GRAPH LINK] Links to entity
+    subject_type: str            # Type (usually "entity")
+    covariate_type: str          # Type (e.g., "claim")
+    attributes: dict | None      # Metadata (description, dates, status, etc.)
+```
+
+**Graph relationship**: `Covariate.subject_id → Entity.title`
+
+**Examples of Covariates**:
+- **Claims**: Assertions about entities ("Company X acquired Company Y")
+- **Temporal data**: start_date, end_date for events
+- **Status**: active, inactive, verified, disputed
+- **Custom attributes**: Any entity-specific metadata
+
+**Graph traversal pattern**:
+```
+Query → Entities (selected)
+           ↓
+    For each entity:
+           ↓
+    Covariates where covariate.subject_id == entity.title
+           ↓
+    Retrieved covariate attributes
+```
+
+**Usage in searches**:
+- **Local Search**: Enriches entity context with claims and metadata
+- **DRIFT Search**: Inherited from Local Search
+- **Global/Basic**: Not used (no entity-level detail needed)
+
+**Token budget**: Controlled within local context allocation, added after entities and relationships
 
 ---
 
